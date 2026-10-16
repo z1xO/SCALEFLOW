@@ -6,14 +6,14 @@ scale.
 
 ## Reads
 
-| Technique | Status |
-| --- | --- |
-| Cursor (keyset) pagination on UUIDv7 ids, time filters as id ranges | Implemented; 120× faster than OFFSET 78k rows deep (measured) |
-| Indexes per query pattern, partial indexes for scheduler/reaper/reconciler | Implemented; dead-letter view 0.04 ms vs 52 ms without its index (measured) |
-| Versioned Redis cache for job detail, stampede-protected cache for metrics/queue health | Implemented; tail latency 2-6× lower at 1,500 req/s (measured) |
-| Read model (projections) for dashboard counts and charts | Implemented; counts are O(statuses), not O(jobs) |
-| PostgreSQL connection pooling (node-postgres pools per process) | Implemented; add PgBouncer when process count × pool size approaches `max_connections` |
-| Read replicas with LSN-based read-your-writes | Implemented, not exercised against a real replica (see deployment.md) |
+| Technique                                                                               | Status                                                                                 |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Cursor (keyset) pagination on UUIDv7 ids, time filters as id ranges                     | Implemented; 120× faster than OFFSET 78k rows deep (measured)                          |
+| Indexes per query pattern, partial indexes for scheduler/reaper/reconciler              | Implemented; dead-letter view 0.04 ms vs 52 ms without its index (measured)            |
+| Versioned Redis cache for job detail, stampede-protected cache for metrics/queue health | Implemented; tail latency 2-6× lower at 1,500 req/s (measured)                         |
+| Read model (projections) for dashboard counts and charts                                | Implemented; counts are O(statuses), not O(jobs)                                       |
+| PostgreSQL connection pooling (node-postgres pools per process)                         | Implemented; add PgBouncer when process count × pool size approaches `max_connections` |
+| Read replicas with LSN-based read-your-writes                                           | Implemented, not exercised against a real replica (see deployment.md)                  |
 
 ## Writes
 

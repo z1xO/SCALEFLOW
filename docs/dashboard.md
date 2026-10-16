@@ -3,17 +3,17 @@
 A Next.js (App Router) client application in `apps/dashboard`. Every page talks to the real API
 with `fetch(..., { credentials: 'include' })`; there is no mock data anywhere.
 
-| Page | What it does | API |
-| --- | --- | --- |
-| `/login` | Sign in / create account | `POST /v1/auth/login`, `/register` |
-| `/projects` | List and create projects | `GET/POST /v1/projects` |
-| `/projects/:id` | Overview: success rate, submitted, active jobs, execution and queue-wait percentiles, throughput chart (with table view), queue health, live event feed | `/metrics`, `/system/queues`, `/events`, SSE |
-| `/projects/:id/jobs` | Filterable job table (status/type/queue in the URL), cursor "load more", inline retry/cancel, live updates. `?status=failed` is the dead-letter view | `/jobs`, `/retry`, `/cancel` |
-| `/projects/:id/jobs/:jobId` | Status, payload, result, last error, attempt history with errors, state timeline, retry/cancel | `/jobs/:id`, `/attempts`, `/events` |
-| `/projects/:id/jobs/new` | Submission form with per-type payload templates, delay, retries/backoff, timeout, idempotency key; shows server validation issues | `POST /jobs`, `/job-types` |
-| `/projects/:id/schedules` | Create, pause/resume, run now, delete cron schedules | `/schedules` |
-| `/projects/:id/system` | Workers (heartbeat, utilization) and queue depth | `/system/workers`, `/system/queues` |
-| `/projects/:id/settings` | API keys (create - secret shown once - rotate, revoke) and members | `/api-keys`, `/members` |
+| Page                        | What it does                                                                                                                                            | API                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `/login`                    | Sign in / create account                                                                                                                                | `POST /v1/auth/login`, `/register`           |
+| `/projects`                 | List and create projects                                                                                                                                | `GET/POST /v1/projects`                      |
+| `/projects/:id`             | Overview: success rate, submitted, active jobs, execution and queue-wait percentiles, throughput chart (with table view), queue health, live event feed | `/metrics`, `/system/queues`, `/events`, SSE |
+| `/projects/:id/jobs`        | Filterable job table (status/type/queue in the URL), cursor "load more", inline retry/cancel, live updates. `?status=failed` is the dead-letter view    | `/jobs`, `/retry`, `/cancel`                 |
+| `/projects/:id/jobs/:jobId` | Status, payload, result, last error, attempt history with errors, state timeline, retry/cancel                                                          | `/jobs/:id`, `/attempts`, `/events`          |
+| `/projects/:id/jobs/new`    | Submission form with per-type payload templates, delay, retries/backoff, timeout, idempotency key; shows server validation issues                       | `POST /jobs`, `/job-types`                   |
+| `/projects/:id/schedules`   | Create, pause/resume, run now, delete cron schedules                                                                                                    | `/schedules`                                 |
+| `/projects/:id/system`      | Workers (heartbeat, utilization) and queue depth                                                                                                        | `/system/workers`, `/system/queues`          |
+| `/projects/:id/settings`    | API keys (create - secret shown once - rotate, revoke) and members                                                                                      | `/api-keys`, `/members`                      |
 
 **State handling.** TanStack Query owns server state. Every page has loading (skeletons), empty,
 error (with request id and retry) states; the sidebar shows the live-connection state (Connecting,

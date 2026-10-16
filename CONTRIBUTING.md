@@ -55,5 +55,5 @@ elsewhere with `TEST_DATABASE_URL` and `TEST_REDIS_URL`.
 
 ## Commit messages and reviews
 
-Small, focused commits with a message explaining *why*. Reviews look at correctness under
+Small, focused commits with a message explaining _why_. Reviews look at correctness under
 concurrency and failure first, then readability. Be kind; see the [Code of Conduct](CODE_OF_CONDUCT.md).

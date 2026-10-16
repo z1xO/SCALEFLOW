@@ -6,18 +6,18 @@ flows with `curl`.
 
 ## Conventions
 
-| | |
-| --- | --- |
-| Base URL | `http://localhost:4000` locally; all routes are versioned under `/v1` |
-| Auth (services) | `Authorization: Bearer sf_...` - an API key, scoped to **one** project, with scopes `jobs:read` / `jobs:write` |
-| Auth (dashboard) | `sf_session` HttpOnly cookie from `POST /v1/auth/login`. Cookie-authenticated writes must send an allowed `Origin` (CSRF protection) |
-| Errors | [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details, `content-type: application/problem+json`, always with a stable `code` and the `requestId` |
-| Correlation | Send `X-Request-Id` (8-128 chars of `[A-Za-z0-9._:-]`) or one is generated; it is echoed back, logged everywhere, and stored on jobs as `correlationId` |
-| Idempotency | `Idempotency-Key` header on `POST /jobs` (or `idempotencyKey` per item in a batch) |
-| Pagination | Cursor based: `?limit=50&cursor=<nextCursor>`; `nextCursor: null` means the last page. Ordering is newest first |
-| Rate limits | Per API key / user (default 600 req/min), stricter on login/registration; `429` with `Retry-After` |
-| Backpressure | `429 project_queue_full` (per-project active-job quota) and `503 system_overloaded` (outbox backlog), both with `Retry-After` |
-| Read-your-writes | With a read replica configured, writes return `X-ScaleFlow-Commit-LSN`; send it back as `X-ScaleFlow-Min-LSN` |
+|                  |                                                                                                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Base URL         | `http://localhost:4000` locally; all routes are versioned under `/v1`                                                                                         |
+| Auth (services)  | `Authorization: Bearer sf_...` - an API key, scoped to **one** project, with scopes `jobs:read` / `jobs:write`                                                |
+| Auth (dashboard) | `sf_session` HttpOnly cookie from `POST /v1/auth/login`. Cookie-authenticated writes must send an allowed `Origin` (CSRF protection)                          |
+| Errors           | [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details, `content-type: application/problem+json`, always with a stable `code` and the `requestId` |
+| Correlation      | Send `X-Request-Id` (8-128 chars of `[A-Za-z0-9._:-]`) or one is generated; it is echoed back, logged everywhere, and stored on jobs as `correlationId`       |
+| Idempotency      | `Idempotency-Key` header on `POST /jobs` (or `idempotencyKey` per item in a batch)                                                                            |
+| Pagination       | Cursor based: `?limit=50&cursor=<nextCursor>`; `nextCursor: null` means the last page. Ordering is newest first                                               |
+| Rate limits      | Per API key / user (default 600 req/min), stricter on login/registration; `429` with `Retry-After`                                                            |
+| Backpressure     | `429 project_queue_full` (per-project active-job quota) and `503 system_overloaded` (outbox backlog), both with `Retry-After`                                 |
+| Read-your-writes | With a read replica configured, writes return `X-ScaleFlow-Commit-LSN`; send it back as `X-ScaleFlow-Min-LSN`                                                 |
 
 Error example:
 
@@ -33,17 +33,17 @@ Error example:
 }
 ```
 
-| Status | Typical codes |
-| --- | --- |
-| 400 | `validation_failed` (schema), invalid cursor |
-| 401 | `unauthorized` (missing/expired/revoked credentials) |
-| 403 | `forbidden` (role or scope too weak, CSRF origin rejected) |
-| 404 | `not_found` - also for resources in projects you cannot access |
-| 409 | `invalid_transition`, `job_not_cancellable`, `job_not_retryable`, `email_taken`, `last_owner` |
-| 413 | `payload_too_large` (request body over 1 MiB) |
-| 422 | `unknown_job_type`, `invalid_payload`, `unknown_queue`, `payload_too_large` (payload over 64 KiB), `idempotency_key_reused`, `invalid_cron` |
-| 429 | `rate_limited`, `project_queue_full`, `too_many_streams` |
-| 503 | `system_overloaded` |
+| Status | Typical codes                                                                                                                               |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 400    | `validation_failed` (schema), invalid cursor                                                                                                |
+| 401    | `unauthorized` (missing/expired/revoked credentials)                                                                                        |
+| 403    | `forbidden` (role or scope too weak, CSRF origin rejected)                                                                                  |
+| 404    | `not_found` - also for resources in projects you cannot access                                                                              |
+| 409    | `invalid_transition`, `job_not_cancellable`, `job_not_retryable`, `email_taken`, `last_owner`                                               |
+| 413    | `payload_too_large` (request body over 1 MiB)                                                                                               |
+| 422    | `unknown_job_type`, `invalid_payload`, `unknown_queue`, `payload_too_large` (payload over 64 KiB), `idempotency_key_reused`, `invalid_cron` |
+| 429    | `rate_limited`, `project_queue_full`, `too_many_streams`                                                                                    |
+| 503    | `system_overloaded`                                                                                                                         |
 
 ## Walkthrough
 
@@ -106,13 +106,13 @@ different body. Delay a job with `"delayMs": 60000` or `"runAt": "2026-10-17T09:
 
 Built-in job types (`GET /v1/job-types`):
 
-| Type | Payload | Notes |
-| --- | --- | --- |
-| `webhook.deliver` | `{ url, method?, headers?, body }` | Signed with HMAC-SHA256 (`ScaleFlow-Signature: v1=<hex>` over `<ScaleFlow-Timestamp>.<body>`), sends `Idempotency-Key: <jobId>`; 2xx ok, 408/429/5xx retry, other 4xx permanent. Private/loopback targets are blocked unless `WEBHOOK_ALLOW_PRIVATE_NETWORKS=true` |
-| `demo.echo` | `{ message?, delayMs? }` | Returns its input |
-| `demo.sleep` | `{ durationMs }` | I/O-bound work |
-| `demo.flaky` | `{ failureRate?, succeedOnAttempt?, permanent?, durationMs? }` | Exercises retries and dead-lettering |
-| `demo.cpu` | `{ iterations }` | CPU-bound work |
+| Type              | Payload                                                        | Notes                                                                                                                                                                                                                                                              |
+| ----------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `webhook.deliver` | `{ url, method?, headers?, body }`                             | Signed with HMAC-SHA256 (`ScaleFlow-Signature: v1=<hex>` over `<ScaleFlow-Timestamp>.<body>`), sends `Idempotency-Key: <jobId>`; 2xx ok, 408/429/5xx retry, other 4xx permanent. Private/loopback targets are blocked unless `WEBHOOK_ALLOW_PRIVATE_NETWORKS=true` |
+| `demo.echo`       | `{ message?, delayMs? }`                                       | Returns its input                                                                                                                                                                                                                                                  |
+| `demo.sleep`      | `{ durationMs }`                                               | I/O-bound work                                                                                                                                                                                                                                                     |
+| `demo.flaky`      | `{ failureRate?, succeedOnAttempt?, permanent?, durationMs? }` | Exercises retries and dead-lettering                                                                                                                                                                                                                               |
+| `demo.cpu`        | `{ iterations }`                                               | CPU-bound work                                                                                                                                                                                                                                                     |
 
 ### 3. Check status, attempts and history
 

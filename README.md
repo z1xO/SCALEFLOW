@@ -3,7 +3,7 @@
 An open-source, educational **distributed job processing and event delivery platform**: submit jobs
 over a REST API, run them on horizontally scaled workers with retries, backoff, dead-lettering and
 schedules, and watch them live in a dashboard. Built to demonstrate durable publication
-(transactional outbox), at-least-once delivery with exactly-once *claims*, CQRS read models,
+(transactional outbox), at-least-once delivery with exactly-once _claims_, CQRS read models,
 commit-ordered real-time events, and honest operational limits.
 
 Stack: TypeScript, Node.js 24, Fastify 5, PostgreSQL 17, Redis 8 + BullMQ, Zod, OpenAPI, Server-Sent
@@ -63,23 +63,39 @@ npm run test:e2e         # Playwright against the running stack
 k6 run load/write-heavy.js   # see docs/benchmarks.md
 ```
 
+## Troubleshooting
+
+| Symptom                                                         | Fix                                                                                                               |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `Invalid configuration: DATABASE_URL ...` on start              | Copy `.env.example` to `.env` (or export the variables).                                                          |
+| API `/readyz` returns 503                                       | PostgreSQL or Redis is not reachable; the response body says which. `docker compose ps`.                          |
+| `EADDRINUSE` on 4000 / 9465-9467 / 3000                         | Another instance is running. Each worker replica needs its own `WORKER_METRICS_PORT` when run outside containers. |
+| Dashboard shows "Cannot reach the ScaleFlow API"                | API not running, or `NEXT_PUBLIC_API_URL` wrong (it is baked in at build time).                                   |
+| Login works but every write returns 403                         | The dashboard origin is missing from `CORS_ORIGINS` (CSRF origin check).                                          |
+| Jobs stay `queued`                                              | No worker for that queue (`WORKER_QUEUES`), or relay down. See [runbook](docs/operations.md#jobs-stay-queued).    |
+| Webhook jobs fail with `destination_blocked`                    | Target resolves to a private address; set `WEBHOOK_ALLOW_PRIVATE_NETWORKS=true` for local testing only.           |
+| `429 rate_limited` during load tests                            | Raise `RATE_LIMIT_MAX` / `MAX_ACTIVE_JOBS_PER_PROJECT` (see [benchmarks](docs/benchmarks.md#reproducing)).        |
+| BullMQ warns `Eviction policy is ... It should be "noeviction"` | Set `maxmemory-policy noeviction` on Redis (compose does).                                                        |
+| Integration tests fail to connect                               | Set `TEST_DATABASE_URL` (any database; tests create their own) and `TEST_REDIS_URL`.                              |
+
 ## Documentation
 
 [API guide](docs/api.md) · [Architecture](docs/architecture.md) · [Operations & runbooks](docs/operations.md) ·
 [Benchmarks (measured)](docs/benchmarks.md) · [Scaling](docs/scaling.md) · [Deployment](docs/deployment.md) ·
-[Security](docs/security.md) · [Dashboard](docs/dashboard.md) · [Project status](PROJECT_STATUS.md)
+[Security](docs/security.md) · [Dashboard](docs/dashboard.md) · [Engineering report](docs/engineering-report.md) ·
+[Project status](PROJECT_STATUS.md) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md)
 
 ## System Design Decisions
 
-| Component | Why | Alternatives considered |
-| --- | --- | --- |
-| PostgreSQL as source of truth | Transactions make job + event + outbox atomic; conditional UPDATEs enforce the state machine | Redis-only queues (state lost on Redis failure) |
-| Transactional outbox | No lost/phantom jobs between DB commit and queue publish | Direct publish (unsafe), CDC/Debezium (heavier ops) |
-| BullMQ as delivery only | Fast blocking delivery, concurrency, stalled detection; retries/delays stay in PostgreSQL | SKIP LOCKED polling queue (pg-boss), SQS, RabbitMQ |
-| Separate api/worker/relay/scheduler processes | Independent scaling and failure isolation | Monolith (stuck handlers stall dispatch), microservices (cost without benefit) |
-| SSE over Socket.IO | One-way updates, native resume via Last-Event-ID, no sticky sessions | Socket.IO, polling |
-| Projected read model | O(1) dashboard counts without hot counter rows | `count(*)` per refresh, in-transaction counters |
-| UUIDv7 ids | Time-ordered keyset pagination, index locality | bigserial (enumerable), UUIDv4 (random inserts) |
+| Component                                     | Why                                                                                          | Alternatives considered                                                        |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| PostgreSQL as source of truth                 | Transactions make job + event + outbox atomic; conditional UPDATEs enforce the state machine | Redis-only queues (state lost on Redis failure)                                |
+| Transactional outbox                          | No lost/phantom jobs between DB commit and queue publish                                     | Direct publish (unsafe), CDC/Debezium (heavier ops)                            |
+| BullMQ as delivery only                       | Fast blocking delivery, concurrency, stalled detection; retries/delays stay in PostgreSQL    | SKIP LOCKED polling queue (pg-boss), SQS, RabbitMQ                             |
+| Separate api/worker/relay/scheduler processes | Independent scaling and failure isolation                                                    | Monolith (stuck handlers stall dispatch), microservices (cost without benefit) |
+| SSE over Socket.IO                            | One-way updates, native resume via Last-Event-ID, no sticky sessions                         | Socket.IO, polling                                                             |
+| Projected read model                          | O(1) dashboard counts without hot counter rows                                               | `count(*)` per refresh, in-transaction counters                                |
+| UUIDv7 ids                                    | Time-ordered keyset pagination, index locality                                               | bigserial (enumerable), UUIDv4 (random inserts)                                |
 
 **Guarantees:** submission exactly-once per idempotency key; delivery at-least-once; claim at-most-once
 per attempt; side effects at-least-once (handlers receive a stable job id for downstream dedupe).
