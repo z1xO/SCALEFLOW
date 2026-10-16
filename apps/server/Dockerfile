@@ -3,7 +3,7 @@
 #   node dist/processes/api.js | worker.js | relay.js | scheduler.js | node dist/cli/migrate.js
 # Build from the repository root:  docker build -f apps/server/Dockerfile -t scaleflow-server .
 
-FROM node:24.21.0-alpine AS build
+FROM node:26.11.1-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY apps/server/package.json apps/server/
@@ -12,14 +12,14 @@ RUN npm ci --workspace @scaleflow/server --include-workspace-root --ignore-scrip
 COPY apps/server apps/server
 RUN npm run build --workspace @scaleflow/server
 
-FROM node:24.21.0-alpine AS prod-deps
+FROM node:26.11.1-alpine AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/server/package.json apps/server/
 COPY apps/dashboard/package.json apps/dashboard/
 RUN npm ci --workspace @scaleflow/server --omit=dev --ignore-scripts --no-audit --no-fund
 
-FROM node:24.21.0-alpine AS runtime
+FROM node:26.11.1-alpine AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=prod-deps /app/node_modules ./node_modules
