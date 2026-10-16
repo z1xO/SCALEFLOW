@@ -1,5 +1,3 @@
+# Security issues must not be filed as public issues - see SECURITY.md
+# (private reporting through the repository's Security tab).
 blank_issues_enabled: false
-contact_links:
-  - name: Security vulnerability
-    url: https://github.com/OWNER/scaleflow/security/advisories/new
-    about: Report privately - see SECURITY.md
