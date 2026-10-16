@@ -8,6 +8,13 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # typescript-eslint supports TypeScript < 6.1; move to 7 once it does.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major, version-update:semver-minor]
+      # Types follow the runtime: Node 24 LTS (see .nvmrc and the Dockerfiles).
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -16,3 +23,7 @@ updates:
     directories: [/apps/server, /apps/dashboard]
     schedule:
       interval: monthly
+    ignore:
+      # Stay on the Node.js LTS line; bump majors deliberately together with .nvmrc and CI.
+      - dependency-name: node
+        update-types: [version-update:semver-major]
