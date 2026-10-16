@@ -243,8 +243,11 @@ ORDER BY tx_id, id
 transaction that has already committed or aborted – nothing can appear behind the cursor later.
 The SSE event id is `"<tx_id>.<id>"`. The same query serves both the live tail (each API process
 polls every 250 ms and fans out to its local connections) and reconnect replay, so resumption is
-exact. The cost: a long-running write transaction anywhere in the database holds the watermark
-back and delays events until it finishes – one reason retention deletes run in small batches.
+exact. The cost: a long-running write transaction holds the watermark back and delays events
+until it finishes – one reason retention deletes run in small batches. Transaction ids are
+cluster-wide, so this includes transactions in *other databases on the same PostgreSQL server*
+(found the hard way: the integration tests run several databases in parallel). Give ScaleFlow its
+own cluster in production, and alert on `scaleflow_projection_lag_seconds`.
 (`NOTIFY` was considered to cut latency, but it serialises commits of notifying transactions behind
 a global lock, which is the wrong trade on the hottest write path.)
 

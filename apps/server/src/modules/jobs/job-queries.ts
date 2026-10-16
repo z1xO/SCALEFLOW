@@ -39,6 +39,13 @@ export function decodeCursor(cursor: string, validate: (v: string) => boolean): 
   return value;
 }
 
+/**
+ * Event columns with bigint/xid8 cast to text for JavaScript. ORDER BY must use the qualified
+ * columns (e.id): unqualified names would resolve to these text aliases and sort lexically.
+ */
+const EVENT_COLUMNS =
+  'e.id::text AS id, e.tx_id::text AS tx_id, e.project_id, e.job_id, e.type, e.data, e.created_at';
+
 /** Columns needed for list views - excludes payload/result, which can be large. */
 const LIST_COLUMNS = `id, project_id, type, queue, status, NULL::jsonb AS payload, NULL::jsonb AS result, last_error,
   idempotency_key, NULL::text AS request_fingerprint, correlation_id, max_attempts, attempt_count, run_attempts, backoff,
@@ -119,8 +126,7 @@ export class JobQueries {
     const pool = await this.router.pool(minLsn);
     await this.assertJobExists(pool, projectId, jobId);
     const { rows } = await pool.query<JobEventRow>(
-      `SELECT id::text, tx_id::text, project_id, job_id, type, data, created_at
-       FROM job_events WHERE job_id = $1 AND project_id = $2 ORDER BY id LIMIT 1000`,
+      `SELECT ${EVENT_COLUMNS} FROM job_events e WHERE e.job_id = $1 AND e.project_id = $2 ORDER BY e.id LIMIT 1000`,
       [jobId, projectId],
     );
     return rows.map(toEventDto);
@@ -132,20 +138,19 @@ export class JobQueries {
     page: { limit: number; cursor?: string; jobId?: string },
   ): Promise<Page<JobEventDto>> {
     const params: unknown[] = [projectId];
-    let where = 'project_id = $1';
+    let where = 'e.project_id = $1';
     if (page.jobId) {
       params.push(page.jobId);
-      where += ` AND job_id = $${params.length}`;
+      where += ` AND e.job_id = $${params.length}`;
     }
     if (page.cursor) {
       params.push(decodeCursor(page.cursor, (v) => /^\d{1,19}$/.test(v)));
-      where += ` AND id < $${params.length}`;
+      where += ` AND e.id < $${params.length}`;
     }
     params.push(page.limit + 1);
     const pool = await this.router.pool();
     const { rows } = await pool.query<JobEventRow>(
-      `SELECT id::text, tx_id::text, project_id, job_id, type, data, created_at
-       FROM job_events WHERE ${where} ORDER BY id DESC LIMIT $${params.length}`,
+      `SELECT ${EVENT_COLUMNS} FROM job_events e WHERE ${where} ORDER BY e.id DESC LIMIT $${params.length}`,
       params,
     );
     const hasMore = rows.length > page.limit;
@@ -155,7 +160,7 @@ export class JobQueries {
   }
 
   private async assertJobExists(
-    pool: { query: ReadRouter['primary']['query'] },
+    pool: Pick<ReadRouter['primary'], 'query'>,
     projectId: string,
     jobId: string,
   ): Promise<void> {

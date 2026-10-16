@@ -1,4 +1,4 @@
-﻿import cookie from '@fastify/cookie';
+import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
@@ -20,6 +20,8 @@ import { checkDependencies } from './health.js';
 import { authRoutes } from './routes/auth.js';
 import { jobRoutes } from './routes/jobs.js';
 import { projectRoutes } from './routes/projects.js';
+import { scheduleRoutes } from './routes/schedules.js';
+import { systemRoutes } from './routes/system.js';
 
 const REQUEST_ID_RE = /^[A-Za-z0-9._:-]{8,128}$/;
 
@@ -143,6 +145,8 @@ export async function buildApp(services: Services, opts: AppOptions = {}): Promi
   await app.register(authRoutes(services));
   await app.register(projectRoutes(services));
   await app.register(jobRoutes(services));
+  await app.register(scheduleRoutes(services));
+  await app.register(systemRoutes(services));
   for (const plugin of opts.plugins ?? []) await app.register(plugin);
 
   return app;

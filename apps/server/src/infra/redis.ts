@@ -1,4 +1,4 @@
-﻿import type { RedisOptions as BullRedisOptions } from 'bullmq';
+import type { RedisOptions as BullRedisOptions } from 'bullmq';
 import { Redis } from 'ioredis';
 import type { Logger } from '../lib/logger.js';
 

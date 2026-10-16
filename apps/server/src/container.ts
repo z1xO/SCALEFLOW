@@ -16,7 +16,10 @@ import { JobCache } from './modules/jobs/job-cache.js';
 import { JobCommands } from './modules/jobs/job-commands.js';
 import { JobExecution } from './modules/jobs/job-execution.js';
 import { JobQueries } from './modules/jobs/job-queries.js';
+import { MetricsQueries } from './modules/projections/metrics-queries.js';
 import { ProjectService } from './modules/projects/projects.js';
+import { ScheduleService } from './modules/schedules/schedules.js';
+import { WorkerRegistry } from './modules/workers/worker-registry.js';
 
 /**
  * Composition root: the only place that knows how concrete implementations fit together.
@@ -42,6 +45,9 @@ export interface Services {
   authorizer: Authorizer;
   apiKeys: ApiKeyService;
   projects: ProjectService;
+  schedules: ScheduleService;
+  metricsQueries: MetricsQueries;
+  workers: WorkerRegistry;
   close(): Promise<void>;
 }
 
@@ -105,6 +111,9 @@ export function createServices(config: Config, service: string, overrides: { log
   const authorizer = new Authorizer(pool, redis, prefix, logger);
   const apiKeys = new ApiKeyService(pool, redis, (hash) => auth.apiKeyCacheKey(hash));
   const projects = new ProjectService(pool, authorizer);
+  const schedules = new ScheduleService(pool, jobCommands, logger);
+  const metricsQueries = new MetricsQueries(readRouter, loader, prefix);
+  const workers = new WorkerRegistry(pool);
 
   let closed = false;
   return {
@@ -126,6 +135,9 @@ export function createServices(config: Config, service: string, overrides: { log
     authorizer,
     apiKeys,
     projects,
+    schedules,
+    metricsQueries,
+    workers,
     async close() {
       if (closed) return;
       closed = true;

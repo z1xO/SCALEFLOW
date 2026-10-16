@@ -1,4 +1,4 @@
-import { Queue, type JobsOptions } from 'bullmq';
+import { Queue, type JobsOptions, type KeepJobs } from 'bullmq';
 import { bullConnection } from './redis.js';
 import type { DispatchPayload } from '../modules/jobs/write-helpers.js';
 
@@ -15,10 +15,13 @@ export function bullQueueName(queue: string): string {
  * BullMQ is the *delivery* mechanism only. It does not own retries, delays or job state - those
  * live in PostgreSQL - so every BullMQ job is a single-attempt, ready-to-run dispatch.
  */
+export const KEEP_COMPLETED: KeepJobs = { age: 3600, count: 10_000 };
+export const KEEP_FAILED: KeepJobs = { age: 24 * 3600, count: 10_000 };
+
 export const DISPATCH_JOB_OPTIONS: JobsOptions = {
   attempts: 1,
-  removeOnComplete: { age: 3600, count: 10_000 },
-  removeOnFail: { age: 24 * 3600, count: 10_000 },
+  removeOnComplete: KEEP_COMPLETED,
+  removeOnFail: KEEP_FAILED,
 };
 
 export class QueueSet {

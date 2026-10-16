@@ -1,4 +1,4 @@
-﻿import { lookup as dnsLookup, type LookupAddress } from 'node:dns';
+import { lookup as dnsLookup, type LookupAddress } from 'node:dns';
 import { BlockList, isIP, type LookupFunction } from 'node:net';
 
 /**

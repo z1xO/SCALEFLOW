@@ -1,4 +1,4 @@
-﻿import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { CachedLoader } from '../../src/infra/cache/cached-loader.js';
 import { VersionedCache } from '../../src/infra/cache/versioned-cache.js';
 import { asKey, createTenant, createTestContext, type TestContext } from '../helpers/context.js';

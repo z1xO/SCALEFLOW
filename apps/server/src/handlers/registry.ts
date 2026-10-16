@@ -1,4 +1,4 @@
-﻿import type { Config } from '../config/env.js';
+import type { Config } from '../config/env.js';
 import { UnprocessableError } from '../lib/errors.js';
 import { cpuHandler, echoHandler, flakyHandler, sleepHandler } from './demo.js';
 import type { JobHandler } from './types.js';

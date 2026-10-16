@@ -1,4 +1,4 @@
-﻿import pg from 'pg';
+import pg from 'pg';
 import type { Logger } from '../../lib/logger.js';
 
 export type Pool = pg.Pool;

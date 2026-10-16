@@ -1,4 +1,4 @@
-﻿import type { FastifyInstance, InjectOptions, LightMyRequestResponse } from 'fastify';
+import type { FastifyInstance, InjectOptions, LightMyRequestResponse } from 'fastify';
 import pg from 'pg';
 import { loadConfig, type Config } from '../../src/config/env.js';
 import { createServices, type Services } from '../../src/container.js';

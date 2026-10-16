@@ -1,4 +1,4 @@
-﻿import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
+import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Services } from '../../container.js';
 import { CreateApiKeySchema, RotateApiKeySchema } from '../../modules/auth/api-keys.js';

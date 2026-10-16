@@ -1,4 +1,4 @@
-﻿import type { Logger } from './logger.js';
+import type { Logger } from './logger.js';
 import type { Metrics } from './metrics.js';
 import { sleep } from './async.js';
 

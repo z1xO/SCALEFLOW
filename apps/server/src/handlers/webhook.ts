@@ -1,4 +1,4 @@
-﻿import { createHmac } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 import { isIP } from 'node:net';
 import { Agent, request, type Dispatcher } from 'undici';
 import { z } from 'zod';
