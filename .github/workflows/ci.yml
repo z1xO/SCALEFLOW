@@ -142,6 +142,6 @@ jobs:
       # Production dependencies must have no known high/critical vulnerabilities.
       - run: npm audit --omit=dev --audit-level=high
       - if: github.event_name == 'pull_request'
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high
