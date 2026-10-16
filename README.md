@@ -1,6 +1,6 @@
 # ScaleFlow
 
-[![CI](https://github.com/z1XO/scaleflow/actions/workflows/ci.yml/badge.svg)](https://github.com/z1XO/scaleflow/actions/workflows/ci.yml)
+[![CI](https://github.com/z1xO/SCALEFLOW/actions/workflows/ci.yml/badge.svg)](https://github.com/z1xO/SCALEFLOW/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 An open-source, educational **distributed job processing and event delivery platform**: submit jobs
