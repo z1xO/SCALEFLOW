@@ -21,13 +21,14 @@ import { authRoutes } from './routes/auth.js';
 import { jobRoutes } from './routes/jobs.js';
 import { projectRoutes } from './routes/projects.js';
 import { scheduleRoutes } from './routes/schedules.js';
+import { streamRoutes } from './routes/stream.js';
 import { systemRoutes } from './routes/system.js';
+import { takeSnapshot } from '../modules/maintenance/gauges.js';
+import { RealtimeHub } from '../modules/realtime/hub.js';
 
 const REQUEST_ID_RE = /^[A-Za-z0-9._:-]{8,128}$/;
 
 export interface AppOptions {
-  /** Extra route plugins (realtime, metrics, system) registered by the API process. */
-  plugins?: ((app: FastifyInstance) => Promise<void>)[];
   isShuttingDown?: () => boolean;
 }
 
@@ -147,7 +148,21 @@ export async function buildApp(services: Services, opts: AppOptions = {}): Promi
   await app.register(jobRoutes(services));
   await app.register(scheduleRoutes(services));
   await app.register(systemRoutes(services));
-  for (const plugin of opts.plugins ?? []) await app.register(plugin);
+
+  // Real-time delivery. The hub's tailer starts lazily with the first subscriber.
+  const hub = new RealtimeHub(
+    services.pool,
+    () =>
+      services.loader.get(`${config.REDIS_KEY_PREFIX}:system:queues`, { freshMs: 2_000, staleMs: 10_000 }, () =>
+        takeSnapshot(services.pool, services.queues),
+      ),
+    services.logger,
+    metrics,
+    { pollMs: config.SSE_POLL_MS, batchSize: 500, systemSnapshotMs: 5_000, maxConnectionsPerPrincipal: 20 },
+  );
+  // preClose runs before Fastify waits for open connections: end SSE streams first.
+  app.addHook('preClose', () => hub.stop());
+  await app.register(streamRoutes(services, hub));
 
   return app;
 }
