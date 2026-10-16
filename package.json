@@ -26,9 +26,9 @@
     "db:seed": "npm run db:seed -w @scaleflow/server"
   },
   "devDependencies": {
-    "@playwright/test": "1.63.0",
-    "concurrently": "10.0.5",
-    "eslint": "10.11.0",
-    "prettier": "3.9.9"
+    "@playwright/test": "1.64.0",
+    "concurrently": "10.0.6",
+    "eslint": "10.12.0",
+    "prettier": "3.9.10"
   }
 }
