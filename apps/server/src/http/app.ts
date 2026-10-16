@@ -59,6 +59,9 @@ export async function buildApp(services: Services, opts: AppOptions = {}): Promi
   });
   app.addHook('onResponse', async (request, reply) => {
     const route = request.routeOptions.url ?? 'unmatched';
+    // Long-lived SSE streams would dominate the latency histogram; they are tracked by
+    // scaleflow_realtime_connections instead.
+    if (route === '/v1/projects/:projectId/stream' && reply.statusCode === 200) return;
     const seconds = reply.elapsedTime / 1000;
     metrics.httpRequestDuration.observe({ method: request.method, route, status_code: String(reply.statusCode) }, seconds);
     const level = reply.statusCode >= 500 ? 'error' : reply.statusCode >= 400 ? 'info' : 'debug';

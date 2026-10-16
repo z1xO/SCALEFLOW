@@ -1,0 +1,89 @@
+# Example alert rules. Thresholds are starting points - tune them to your traffic.
+# Every alert links to its runbook in docs/operations.md.
+groups:
+  - name: scaleflow
+    rules:
+      - alert: ScaleFlowTargetDown
+        expr: up{job=~"api|worker|relay|scheduler"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: '{{ $labels.job }} instance {{ $labels.instance }} is down'
+          runbook: docs/operations.md#a-process-is-down
+
+      - alert: ScaleFlowNoWorkers
+        expr: max(scaleflow_workers_online) == 0 and max(scaleflow_jobs_active{status="queued"}) > 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: 'Jobs are queued but no worker is online'
+          runbook: docs/operations.md#jobs-stay-queued
+
+      - alert: ScaleFlowQueuedJobsStuck
+        expr: max(scaleflow_oldest_queued_job_age_seconds) > 300
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: 'The oldest queued job has waited {{ $value | humanizeDuration }}'
+          runbook: docs/operations.md#jobs-stay-queued
+
+      - alert: ScaleFlowOutboxBacklog
+        expr: max(scaleflow_outbox_oldest_pending_age_seconds) > 60
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: 'Outbox rows are not being published (oldest {{ $value | humanizeDuration }})'
+          runbook: docs/operations.md#outbox-backlog
+
+      - alert: ScaleFlowHighJobFailureRate
+        expr: |
+          sum(rate(scaleflow_jobs_completed_total{outcome="failed"}[10m]))
+            / clamp_min(sum(rate(scaleflow_jobs_completed_total{outcome=~"succeeded|failed"}[10m])), 1e-9) > 0.10
+          and sum(rate(scaleflow_jobs_completed_total[10m])) > 0.1
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: 'More than 10% of finished jobs are dead-lettered'
+          runbook: docs/operations.md#jobs-fail-repeatedly
+
+      - alert: ScaleFlowWorkersCrashing
+        expr: increase(scaleflow_leases_recovered_total[15m]) > 10
+        labels: { severity: warning }
+        annotations:
+          summary: '{{ $value }} running jobs were recovered from dead workers in 15 minutes'
+          runbook: docs/operations.md#workers-crash-or-lose-leases
+
+      - alert: ScaleFlowApiErrorRate
+        expr: |
+          sum(rate(scaleflow_http_request_duration_seconds_count{status_code=~"5.."}[5m]))
+            / clamp_min(sum(rate(scaleflow_http_request_duration_seconds_count[5m])), 1e-9) > 0.02
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: 'API 5xx rate above 2%'
+          runbook: docs/operations.md#api-errors-or-latency
+
+      - alert: ScaleFlowApiLatencyHigh
+        expr: |
+          histogram_quantile(0.99, sum by (le) (rate(scaleflow_http_request_duration_seconds_bucket[5m]))) > 1
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: 'API p99 latency is {{ $value | humanizeDuration }}'
+          runbook: docs/operations.md#api-errors-or-latency
+
+      - alert: ScaleFlowReadModelLag
+        expr: max(scaleflow_projection_lag_seconds) > 60
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: 'Dashboard read model is {{ $value | humanizeDuration }} behind'
+          runbook: docs/operations.md#dashboard-numbers-look-stale
+
+      - alert: ScaleFlowEventLoopLag
+        expr: max by (job, instance) (scaleflow_nodejs_eventloop_lag_p99_seconds) > 0.5
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: '{{ $labels.job }} event loop p99 lag {{ $value | humanizeDuration }} (CPU-bound handler?)'
+          runbook: docs/operations.md#workers-crash-or-lose-leases

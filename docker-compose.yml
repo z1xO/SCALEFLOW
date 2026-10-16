@@ -1,0 +1,158 @@
+# ScaleFlow local stack.
+#   docker compose up -d --build                 # everything
+#   docker compose up -d postgres redis          # just infrastructure (for `npm run dev`)
+#   docker compose up -d --scale worker=4        # more workers
+#   docker compose run --rm migrate node dist/cli/seed.js   # demo data
+#
+# Credentials below are local-only placeholders. Single instances of PostgreSQL and Redis are
+# single points of failure; see docs/deployment.md for what production needs instead.
+
+x-server: &server
+  build:
+    context: .
+    dockerfile: apps/server/Dockerfile
+  image: scaleflow-server:local
+  init: true
+  restart: unless-stopped
+  environment: &server-env
+    NODE_ENV: production
+    LOG_LEVEL: info
+    DATABASE_URL: postgres://scaleflow:scaleflow@postgres:5432/scaleflow
+    REDIS_URL: redis://redis:6379/0
+    CORS_ORIGINS: http://localhost:3000
+    PUBLIC_API_URL: http://localhost:4000
+    # Local only: plain-HTTP cookies and webhooks to private addresses (the demo receiver).
+    COOKIE_SECURE: 'false'
+    WEBHOOK_ALLOW_PRIVATE_NETWORKS: 'true'
+    WEBHOOK_SIGNING_SECRET: ${WEBHOOK_SIGNING_SECRET:-local-compose-signing-secret}
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    migrate:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: scaleflow
+      POSTGRES_PASSWORD: scaleflow
+      POSTGRES_DB: scaleflow
+    command: ['postgres', '-c', 'max_connections=300', '-c', 'shared_buffers=512MB']
+    ports: ['5432:5432']
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U scaleflow -d scaleflow']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:8-alpine
+    # AOF persistence + noeviction: BullMQ requires that queue keys are never evicted.
+    command: ['redis-server', '--appendonly', 'yes', '--appendfsync', 'everysec', '--maxmemory-policy', 'noeviction']
+    ports: ['6379:6379']
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    <<: *server
+    restart: 'no'
+    command: ['node', 'dist/cli/migrate.js']
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *server
+    command: ['node', 'dist/processes/api.js']
+    ports: ['4000:4000']
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:4000/readyz >/dev/null || exit 1']
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    stop_grace_period: 30s
+
+  worker:
+    <<: *server
+    command: ['node', 'dist/processes/worker.js']
+    environment:
+      <<: *server-env
+      WORKER_CONCURRENCY: '10'
+    deploy:
+      replicas: 2
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:9465/readyz >/dev/null || exit 1']
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    # Longer than WORKER_SHUTDOWN_GRACE_MS (25s) so running jobs can drain on `docker compose stop`.
+    stop_grace_period: 40s
+
+  relay:
+    <<: *server
+    command: ['node', 'dist/processes/relay.js']
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:9466/readyz >/dev/null || exit 1']
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+  scheduler:
+    <<: *server
+    command: ['node', 'dist/processes/scheduler.js']
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:9467/readyz >/dev/null || exit 1']
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4000
+    image: scaleflow-dashboard:local
+    init: true
+    restart: unless-stopped
+    ports: ['3000:3000']
+    depends_on:
+      api:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./infra/prometheus:/etc/prometheus:ro
+      - promdata:/prometheus
+    ports: ['9090:9090']
+    depends_on: [api]
+
+  grafana:
+    image: grafana/grafana:13.2.2
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ['3001:3000']
+    depends_on: [prometheus]
+
+volumes:
+  pgdata:
+  redisdata:
+  promdata:

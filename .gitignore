@@ -19,3 +19,4 @@ load/results/*.json
 
 # Local, session-specific toolchain (portable Node/Postgres/Redis). Never commit.
 .tools/
+next-env.d.ts
