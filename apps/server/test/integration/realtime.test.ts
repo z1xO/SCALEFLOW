@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { parseCursor, readCommittedEvents } from '../../src/modules/events/event-log.js';
 import { JobExecutor } from '../../src/modules/workers/job-executor.js';
+import { waitFor } from '../helpers/pipeline.js';
 import { asKey, asUser, createTenant, createTestContext, type TestContext } from '../helpers/context.js';
 import { SseClient } from '../helpers/sse.js';
 
@@ -97,7 +99,10 @@ describe('server-sent events', () => {
     for (const id of missed) await run(id, a.projectId);
 
     const second = await connect(a.projectId, { ...asUser(a.user), 'last-event-id': resumeFrom! });
-    await second.waitFor((c) => c.messages.some((m) => m.event === 'ready'));
+    // Replay covers everything below the commit watermark; anything committed above it (the
+    // watermark is cluster-wide, so busy neighbours delay it) follows as live traffic. Either way
+    // every missed event must arrive exactly once.
+    await second.waitFor((c) => missed.every((id) => c.jobEvents.filter((e) => e.jobId === id).length >= 3));
     const replayed = second.jobEvents;
     expect(replayed.filter((e) => e.jobId === before)).toHaveLength(0); // already seen: not repeated
     for (const id of missed) {
@@ -135,6 +140,9 @@ describe('server-sent events', () => {
       payload: { jobs: Array.from({ length: 60 }, () => ({ type: 'demo.echo', payload: {} })) }, // > SSE_REPLAY_MAX_EVENTS
     });
     expect(res.statusCode).toBe(201);
+    // Wait until the batch is below the (cluster-wide) commit watermark, i.e. replayable.
+    const from = parseCursor(cursor)!;
+    await waitFor(async () => (await readCommittedEvents(ctx.services.pool, from, 100, [a.projectId])).length > 50);
     const behind = await connect(a.projectId, { ...asKey(a.apiKey), 'last-event-id': cursor });
     await behind.waitFor((c) => c.messages.some((m) => m.event === 'ready'));
     expect(behind.messages.find((m) => m.event === 'reset')?.data).toEqual({ reason: 'too_far_behind' });
