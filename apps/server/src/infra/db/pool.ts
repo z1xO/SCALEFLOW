@@ -1,4 +1,4 @@
-import pg from 'pg';
+﻿import pg from 'pg';
 import type { Logger } from '../../lib/logger.js';
 
 export type Pool = pg.Pool;
@@ -56,7 +56,7 @@ export async function withTransaction<T>(
       await client.query('ROLLBACK');
     } catch (rollbackErr) {
       broken = true;
-      throw new AggregateError([err, rollbackErr], 'transaction failed and rollback failed');
+      throw new AggregateError([err, rollbackErr], 'transaction failed and rollback failed', { cause: rollbackErr });
     }
     throw err;
   } finally {

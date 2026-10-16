@@ -1,4 +1,4 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 
 const bool = z
   .enum(['true', 'false', '1', '0'])
@@ -19,15 +19,15 @@ const EnvSchema = z.object({
   LOG_PRETTY: bool.default(false),
   SERVICE_VERSION: z.string().default('0.1.0'),
 
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.url(),
   /** Optional read replica. When unset, the read pool points at the primary. */
-  DATABASE_READ_URL: z.string().url().optional(),
+  DATABASE_READ_URL: z.url().optional(),
   DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(200).default(20),
   DATABASE_READ_POOL_MAX: z.coerce.number().int().min(1).max(200).default(20),
   DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(100).default(10_000),
   DATABASE_CONNECT_TIMEOUT_MS: z.coerce.number().int().min(100).default(5_000),
 
-  REDIS_URL: z.string().url(),
+  REDIS_URL: z.url(),
   REDIS_KEY_PREFIX: z.string().default('sf'),
   REDIS_COMMAND_TIMEOUT_MS: z.coerce.number().int().min(50).default(2_000),
 
@@ -37,7 +37,7 @@ const EnvSchema = z.object({
   /** Origins allowed for CORS and for cookie-authenticated state-changing requests (CSRF check). */
   CORS_ORIGINS: csv.default(['http://localhost:3000']),
   TRUST_PROXY: bool.default(false),
-  PUBLIC_API_URL: z.string().url().default('http://localhost:4000'),
+  PUBLIC_API_URL: z.url().default('http://localhost:4000'),
 
   COOKIE_SECURE: bool.default(false),
   SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(24 * 90).default(24 * 7),

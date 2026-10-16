@@ -1,4 +1,5 @@
-import { Redis, type RedisOptions } from 'ioredis';
+﻿import type { RedisOptions as BullRedisOptions } from 'bullmq';
+import { Redis } from 'ioredis';
 import type { Logger } from '../lib/logger.js';
 
 export type { Redis };
@@ -23,7 +24,7 @@ export function createRedis(url: string, name: string, logger: Logger, commandTi
  * Connection options for BullMQ. BullMQ requires `maxRetriesPerRequest: null` for workers because
  * blocking commands must survive reconnects; BullMQ creates and owns these connections.
  */
-export function bullConnection(url: string, name: string): RedisOptions & { url?: string } {
+export function bullConnection(url: string, name: string): BullRedisOptions {
   const parsed = new URL(url);
   const db = parsed.pathname.length > 1 ? Number(parsed.pathname.slice(1)) : 0;
   return {

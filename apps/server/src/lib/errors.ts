@@ -63,7 +63,11 @@ export class TooManyRequestsError extends AppError {
 }
 
 export class ServiceUnavailableError extends AppError {
-  constructor(code: string, message: string) {
+  constructor(
+    code: string,
+    message: string,
+    public readonly retryAfterSeconds?: number,
+  ) {
     super(503, code, message);
   }
 }
