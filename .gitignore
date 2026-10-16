@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+
+# Test / tooling artifacts
+playwright-report/
+test-results/
+load/results/*.json
+!load/results/.gitkeep
+
+# Local, session-specific toolchain (portable Node/Postgres/Redis). Never commit.
+.tools/

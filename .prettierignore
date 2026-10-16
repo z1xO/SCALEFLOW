@@ -1,0 +1,10 @@
+node_modules
+dist
+.next
+coverage
+package-lock.json
+.tools
+infra/grafana/dashboards/*.json
+playwright-report
+test-results
+load/results
