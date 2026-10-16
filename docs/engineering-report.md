@@ -81,8 +81,7 @@ authorization, resume and reset.
 
 ## Not verified
 
-- Docker images and `docker-compose.yml` were not built or run (no Docker on the machine).
-- The GitHub Actions workflow has not run on GitHub.
+- The full container stack (`docker compose up`) has not been run end to end; CI builds both images and validates the compose file, and the GitHub Actions workflow passes.
 - Prometheus and Grafana were not run with these configs.
 - Read-replica routing was not run against a real replica.
 

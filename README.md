@@ -115,8 +115,7 @@ DB overhead caps short jobs at ≈550/s on one laptop — see [benchmarks](docs/
 
 ## Limitations and Production Hardening
 
-- Docker images and docker-compose were **not built or run** during development (no Docker available); CI builds them.
-- GitHub Actions workflow is written but has **not been executed**; its steps were run locally.
+- CI (GitHub Actions) passes: lint, typecheck, tests against PostgreSQL/Redis service containers, build, Playwright E2E, both Docker image builds, `docker compose config`, dependency audit. The full container stack (`docker compose up`) has **not** been run end to end.
 - Prometheus/Grafana configuration was not run against a live Prometheus; metric names were checked against `/metrics`.
 - Read-replica routing is implemented but untested against a real replica.
 - Single PostgreSQL/Redis in the local stack are single points of failure (see [operations](docs/operations.md#single-points-of-failure)).

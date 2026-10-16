@@ -17,10 +17,12 @@ PostgreSQL 17.11 and Redis 8.10.2. Node.js 24.21.0.
 - Compiled backend (`dist/`) and Next.js standalone server run.
 - Multi-process worker crash recovery.
 - Load tests - [docs/benchmarks.md](docs/benchmarks.md).
+- GitHub Actions: **green** on GitHub (lint, typecheck, unit + integration, build, E2E, Docker image builds,
+  compose config, audit).
 
 ## Not verified
 
-- Docker images / docker-compose (not built), GitHub Actions (not run on GitHub), Prometheus/Grafana
+- Running the full container stack (`docker compose up`), Prometheus/Grafana
   configs (not loaded into running instances), read-replica routing against a real replica.
 
 ## Next steps

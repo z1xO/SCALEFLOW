@@ -7,7 +7,7 @@ ScaleFlow ships as two images built from this repository:
 - `apps/dashboard/Dockerfile` - the Next.js dashboard (`NEXT_PUBLIC_API_URL` is a **build** argument).
 
 > The Docker images and `docker-compose.yml` are written for this purpose but were **not built or
-> run during development** (no Docker on the development machine). CI builds both images; treat the
+> run as a stack during development** (no Docker on the development machine). CI builds both images and validates the compose file; treat the
 > first deployment as a verification step. The same commands (`node dist/processes/*.js`, the
 > Next.js standalone server) were run natively and work.
 
