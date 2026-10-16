@@ -40,7 +40,9 @@ async function drain(r: OutboxRelay): Promise<void> {
 }
 
 async function pending(): Promise<number> {
-  const { rows } = await ctx.services.pool.query("SELECT count(*)::int AS n FROM outbox WHERE published_at IS NULL");
+  const { rows } = await ctx.services.pool.query(
+    'SELECT count(*)::int AS n FROM outbox WHERE published_at IS NULL',
+  );
   return rows[0].n as number;
 }
 
@@ -57,7 +59,9 @@ describe('outbox relay', () => {
       'SELECT published_at, attempts, last_error FROM outbox WHERE aggregate_id = ANY($1)',
       [ids],
     );
-    expect(rows.every((r) => r.published_at !== null && r.attempts === 1 && r.last_error === null)).toBe(true);
+    expect(rows.every((r) => r.published_at !== null && r.attempts === 1 && r.last_error === null)).toBe(
+      true,
+    );
   });
 
   it('republishing after a crash between publish and mark creates no duplicate queue entries', async () => {
@@ -66,7 +70,9 @@ describe('outbox relay', () => {
     const queue = ctx.services.queues.get('default');
     const before = await queue.count();
     // Simulate: relay published but crashed before recording it.
-    await ctx.services.pool.query('UPDATE outbox SET published_at = NULL WHERE aggregate_id = ANY($1)', [ids]);
+    await ctx.services.pool.query('UPDATE outbox SET published_at = NULL WHERE aggregate_id = ANY($1)', [
+      ids,
+    ]);
     await drain(relay());
     expect(await queue.count()).toBe(before);
     expect(await pending()).toBe(0);
@@ -81,7 +87,10 @@ describe('outbox relay', () => {
     );
     await drain(relay());
     expect(await pending()).toBe(3); // still leased: nobody else touches them
-    await ctx.services.pool.query("UPDATE outbox SET locked_until = now() - interval '1 second' WHERE aggregate_id = ANY($1)", [ids]);
+    await ctx.services.pool.query(
+      "UPDATE outbox SET locked_until = now() - interval '1 second' WHERE aggregate_id = ANY($1)",
+      [ids],
+    );
     await drain(relay());
     expect(await pending()).toBe(0);
   });
@@ -93,14 +102,19 @@ describe('outbox relay', () => {
     const relays = [relay(), relay(), relay(), relay()];
     await Promise.all(relays.map((r) => drain(r)));
     expect(await pending()).toBe(0);
-    const { rows } = await ctx.services.pool.query('SELECT max(attempts)::int AS max FROM outbox WHERE aggregate_id = ANY($1)', [ids]);
+    const { rows } = await ctx.services.pool.query(
+      'SELECT max(attempts)::int AS max FROM outbox WHERE aggregate_id = ANY($1)',
+      [ids],
+    );
     expect(rows[0].max).toBe(1);
   });
 
   it('when Redis is unreachable, rows are released with an error and retried later - not lost', async () => {
     await drain(relay());
     const ids = await submitMany(4);
-    const dead = new QueueSet('redis://127.0.0.1:6399', `${ctx.services.config.REDIS_KEY_PREFIX}-dead`, ['default']);
+    const dead = new QueueSet('redis://127.0.0.1:6399', `${ctx.services.config.REDIS_KEY_PREFIX}-dead`, [
+      'default',
+    ]);
     try {
       await relay(dead, 300).tick();
     } finally {
@@ -118,7 +132,9 @@ describe('outbox relay', () => {
       expect(r.deferred).toBe(true);
     }
     // Once Redis is back (the real one), the rows go out.
-    await ctx.services.pool.query('UPDATE outbox SET available_at = now() WHERE aggregate_id = ANY($1)', [ids]);
+    await ctx.services.pool.query('UPDATE outbox SET available_at = now() WHERE aggregate_id = ANY($1)', [
+      ids,
+    ]);
     await drain(relay());
     expect(await pending()).toBe(0);
   });

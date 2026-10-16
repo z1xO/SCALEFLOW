@@ -24,10 +24,35 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
-    { command: 'npm run dev:api -w @scaleflow/server', url: `${API}/readyz`, reuseExistingServer: true, timeout: 60_000 },
-    { command: 'npm run dev:worker -w @scaleflow/server', url: 'http://localhost:9465/readyz', reuseExistingServer: true, timeout: 60_000 },
-    { command: 'npm run dev:relay -w @scaleflow/server', url: 'http://localhost:9466/readyz', reuseExistingServer: true, timeout: 60_000 },
-    { command: 'npm run dev:scheduler -w @scaleflow/server', url: 'http://localhost:9467/readyz', reuseExistingServer: true, timeout: 60_000 },
-    { command: 'npm run dev -w @scaleflow/dashboard', url: `${WEB}/login`, reuseExistingServer: true, timeout: 120_000 },
+    {
+      command: 'npm run dev:api -w @scaleflow/server',
+      url: `${API}/readyz`,
+      reuseExistingServer: true,
+      timeout: 60_000,
+    },
+    {
+      command: 'npm run dev:worker -w @scaleflow/server',
+      url: 'http://localhost:9465/readyz',
+      reuseExistingServer: true,
+      timeout: 60_000,
+    },
+    {
+      command: 'npm run dev:relay -w @scaleflow/server',
+      url: 'http://localhost:9466/readyz',
+      reuseExistingServer: true,
+      timeout: 60_000,
+    },
+    {
+      command: 'npm run dev:scheduler -w @scaleflow/server',
+      url: 'http://localhost:9467/readyz',
+      reuseExistingServer: true,
+      timeout: 60_000,
+    },
+    {
+      command: 'npm run dev -w @scaleflow/dashboard',
+      url: `${WEB}/login`,
+      reuseExistingServer: true,
+      timeout: 120_000,
+    },
   ],
 });

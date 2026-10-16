@@ -31,7 +31,11 @@ export default function (t) {
   for (let i = 0; i < JOBS; i += 100) {
     submitBatch(
       t,
-      Array.from({ length: Math.min(100, JOBS - i) }, () => ({ type: TYPE, payload: payload(), maxAttempts: 1 })),
+      Array.from({ length: Math.min(100, JOBS - i) }, () => ({
+        type: TYPE,
+        payload: payload(),
+        maxAttempts: 1,
+      })),
     );
   }
   const enqueued = Date.now();

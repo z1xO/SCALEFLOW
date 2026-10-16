@@ -24,10 +24,18 @@ export async function waitFor<T>(
   throw new Error(`Timed out waiting for ${what}${reason}`);
 }
 
-export async function waitForStatus(services: Services, projectId: string, jobId: string, statuses: string[]): Promise<JobDto> {
+export async function waitForStatus(
+  services: Services,
+  projectId: string,
+  jobId: string,
+  statuses: string[],
+): Promise<JobDto> {
   return waitFor(
     async () => {
-      const { rows } = await services.pool.query<{ status: string }>('SELECT status FROM jobs WHERE id = $1', [jobId]);
+      const { rows } = await services.pool.query<{ status: string }>(
+        'SELECT status FROM jobs WHERE id = $1',
+        [jobId],
+      );
       if (!rows[0] || !statuses.includes(rows[0].status)) return null;
       return services.jobQueries.get(projectId, jobId, '0/0');
     },

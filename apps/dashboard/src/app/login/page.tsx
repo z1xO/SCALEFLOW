@@ -36,16 +36,33 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-lg border border-line bg-surface p-6">
         <h1 className="text-xl font-semibold">ScaleFlow</h1>
-        <p className="mt-1 text-sm text-muted">{mode === 'login' ? 'Sign in to your dashboard' : 'Create an account'}</p>
+        <p className="mt-1 text-sm text-muted">
+          {mode === 'login' ? 'Sign in to your dashboard' : 'Create an account'}
+        </p>
         <form className="mt-5 flex flex-col gap-4" onSubmit={onSubmit} noValidate={false}>
           {mode === 'register' && (
             <Field label="Name">
-              {(id) => <Input id={id} value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" />}
+              {(id) => (
+                <Input
+                  id={id}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  autoComplete="name"
+                />
+              )}
             </Field>
           )}
           <Field label="Email">
             {(id) => (
-              <Input id={id} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+              <Input
+                id={id}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
             )}
           </Field>
           <Field label="Password" hint={mode === 'register' ? 'At least 10 characters.' : undefined}>
@@ -86,8 +103,8 @@ export default function LoginPage() {
           </button>
         </p>
         <p className="mt-4 border-t border-line pt-3 text-xs text-muted">
-          Development authentication: email + password with an HttpOnly session cookie. See docs/security.md for what
-          production deployments should add (SSO, MFA).
+          Development authentication: email + password with an HttpOnly session cookie. See docs/security.md
+          for what production deployments should add (SSO, MFA).
         </p>
       </div>
     </main>

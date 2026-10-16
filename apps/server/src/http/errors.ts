@@ -60,7 +60,10 @@ export function registerErrorHandling(app: FastifyInstance): void {
       );
     }
     if (err instanceof AppError) {
-      if (err instanceof TooManyRequestsError || (err instanceof ServiceUnavailableError && err.retryAfterSeconds)) {
+      if (
+        err instanceof TooManyRequestsError ||
+        (err instanceof ServiceUnavailableError && err.retryAfterSeconds)
+      ) {
         void reply.header('retry-after', String(err.retryAfterSeconds));
       }
       if (err.statusCode >= 500) request.log.error({ err }, 'request failed');
@@ -89,6 +92,12 @@ export function registerErrorHandling(app: FastifyInstance): void {
   });
 
   app.setNotFoundHandler((request, reply) =>
-    sendProblem(reply, request, 404, 'route_not_found', `Route ${request.method} ${request.url.split('?')[0] ?? ''} not found`),
+    sendProblem(
+      reply,
+      request,
+      404,
+      'route_not_found',
+      `Route ${request.method} ${request.url.split('?')[0] ?? ''} not found`,
+    ),
   );
 }

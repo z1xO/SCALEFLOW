@@ -1,4 +1,10 @@
-import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } from 'node:crypto';
+import {
+  createHash,
+  randomBytes,
+  scrypt as scryptCb,
+  timingSafeEqual,
+  type ScryptOptions,
+} from 'node:crypto';
 
 export function sha256(input: string | Buffer): Buffer {
   return createHash('sha256').update(input).digest();

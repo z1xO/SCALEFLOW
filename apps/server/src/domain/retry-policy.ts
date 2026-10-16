@@ -35,8 +35,7 @@ export function retryDelayMs(backoff: Backoff, attempt: number, random: () => nu
 }
 
 export type RetryDecision =
-  | { kind: 'retry'; delayMs: number }
-  | { kind: 'fail'; reason: 'permanent_error' | 'attempts_exhausted' };
+  { kind: 'retry'; delayMs: number } | { kind: 'fail'; reason: 'permanent_error' | 'attempts_exhausted' };
 
 export function decideRetry(input: {
   retryable: boolean;

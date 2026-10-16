@@ -11,7 +11,9 @@ loadDotEnv();
 const services = createServices(loadConfig(), 'rebuild-projections');
 try {
   const result = await new Projector(services.pool, services.logger, services.metrics).rebuildCounts();
-  console.log(`Rebuilt ${result.projects} (project, status) counts; checkpoint at ${result.checkpoint.txId}.${result.checkpoint.id}`);
+  console.log(
+    `Rebuilt ${result.projects} (project, status) counts; checkpoint at ${result.checkpoint.txId}.${result.checkpoint.id}`,
+  );
 } finally {
   await services.close();
 }

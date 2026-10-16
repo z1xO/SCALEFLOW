@@ -14,7 +14,10 @@ function abortable(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-const EchoPayload = z.object({ message: z.unknown().optional(), delayMs: z.number().int().min(0).max(60_000).optional() });
+const EchoPayload = z.object({
+  message: z.unknown().optional(),
+  delayMs: z.number().int().min(0).max(60_000).optional(),
+});
 export const echoHandler: JobHandler<z.infer<typeof EchoPayload>> = {
   type: 'demo.echo',
   description: 'Returns its payload as the result.',
@@ -59,8 +62,12 @@ export const flakyHandler: JobHandler<z.infer<typeof FlakyPayload>> = {
         ? ctx.attempt < payload.succeedOnAttempt
         : Math.random() < payload.failureRate;
     if (shouldFail) {
-      if (payload.permanent) throw new PermanentJobError('demo_permanent_failure', 'Simulated permanent failure');
-      throw new RetryableJobError('demo_transient_failure', `Simulated transient failure on attempt ${ctx.attempt}`);
+      if (payload.permanent)
+        throw new PermanentJobError('demo_permanent_failure', 'Simulated permanent failure');
+      throw new RetryableJobError(
+        'demo_transient_failure',
+        `Simulated transient failure on attempt ${ctx.attempt}`,
+      );
     }
     return { ok: true, attempt: ctx.attempt };
   },

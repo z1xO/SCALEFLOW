@@ -17,7 +17,12 @@ export const CreateApiKeySchema = z.object({
 
 export const RotateApiKeySchema = z.object({
   /** How long the old key keeps working after rotation. 0 revokes it immediately. */
-  gracePeriodSeconds: z.number().int().min(0).max(7 * 24 * 3600).default(3600),
+  gracePeriodSeconds: z
+    .number()
+    .int()
+    .min(0)
+    .max(7 * 24 * 3600)
+    .default(3600),
 });
 
 export interface ApiKeyDto {
@@ -121,7 +126,13 @@ export class ApiKeyService {
       );
       const r = rows[0];
       if (!r) throw new NotFoundError('API key');
-      await writeAudit(client, { projectId, actor, action: 'api_key.revoked', targetType: 'api_key', targetId: keyId });
+      await writeAudit(client, {
+        projectId,
+        actor,
+        action: 'api_key.revoked',
+        targetType: 'api_key',
+        targetId: keyId,
+      });
       return r;
     });
     // Effective immediately: the auth cache entry is removed after commit.

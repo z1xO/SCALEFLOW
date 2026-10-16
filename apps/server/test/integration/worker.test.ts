@@ -40,10 +40,16 @@ async function eventTypes(jobId: string): Promise<string[]> {
 }
 
 function executor(workerId: string, leaseMs = 5_000): JobExecutor {
-  return new JobExecutor(ctx.services.jobExecution, ctx.services.handlers, ctx.services.logger, ctx.services.metrics, {
-    workerId,
-    leaseMs,
-  });
+  return new JobExecutor(
+    ctx.services.jobExecution,
+    ctx.services.handlers,
+    ctx.services.logger,
+    ctx.services.metrics,
+    {
+      workerId,
+      leaseMs,
+    },
+  );
 }
 
 function dispatchOf(jobId: string, attempt = 1): DispatchPayload {
@@ -119,15 +125,28 @@ describe('end to end through BullMQ', () => {
 
   it('permanent errors fail immediately without retrying', async () => {
     stopPipeline = (await startPipeline(ctx.services)).stop;
-    const id = await submit({ type: 'demo.flaky', payload: { failureRate: 1, permanent: true }, maxAttempts: 5 });
+    const id = await submit({
+      type: 'demo.flaky',
+      payload: { failureRate: 1, permanent: true },
+      maxAttempts: 5,
+    });
     const job = await waitForStatus(ctx.services, t.projectId, id, ['failed']);
     expect(job.attemptCount).toBe(1);
-    expect(job.lastError).toEqual({ code: 'demo_permanent_failure', message: 'Simulated permanent failure', retryable: false });
+    expect(job.lastError).toEqual({
+      code: 'demo_permanent_failure',
+      message: 'Simulated permanent failure',
+      retryable: false,
+    });
   });
 
   it('enforces job timeouts', async () => {
     stopPipeline = (await startPipeline(ctx.services)).stop;
-    const id = await submit({ type: 'demo.sleep', payload: { durationMs: 10_000 }, timeoutMs: 200, maxAttempts: 1 });
+    const id = await submit({
+      type: 'demo.sleep',
+      payload: { durationMs: 10_000 },
+      timeoutMs: 200,
+      maxAttempts: 1,
+    });
     const job = await waitForStatus(ctx.services, t.projectId, id, ['failed']);
     expect(job.lastError?.code).toBe('timeout');
     const [a] = await attempts(id);
@@ -141,17 +160,28 @@ describe('end to end through BullMQ', () => {
       method: 'POST',
       url: `/v1/projects/${t.projectId}/jobs/batch`,
       headers: asKey(t.apiKey),
-      payload: { jobs: Array.from({ length: 100 }, (_, i) => ({ type: 'demo.sleep', payload: { durationMs: 20 + (i % 5) } })) },
+      payload: {
+        jobs: Array.from({ length: 100 }, (_, i) => ({
+          type: 'demo.sleep',
+          payload: { durationMs: 20 + (i % 5) },
+        })),
+      },
     });
     const ids: string[] = res.json().items.map((i: { job: { id: string } }) => i.job.id);
     await waitFor(
       async () => {
-        const { rows } = await ctx.services.pool.query("SELECT count(*)::int AS n FROM jobs WHERE id = ANY($1) AND status = 'succeeded'", [ids]);
+        const { rows } = await ctx.services.pool.query(
+          "SELECT count(*)::int AS n FROM jobs WHERE id = ANY($1) AND status = 'succeeded'",
+          [ids],
+        );
         return rows[0].n === 100;
       },
       { what: '100 jobs to succeed' },
     );
-    const { rows } = await ctx.services.pool.query('SELECT count(*)::int AS n FROM job_attempts WHERE job_id = ANY($1)', [ids]);
+    const { rows } = await ctx.services.pool.query(
+      'SELECT count(*)::int AS n FROM job_attempts WHERE job_id = ANY($1)',
+      [ids],
+    );
     expect(rows[0].n).toBe(100); // exactly one attempt each
   });
 });
@@ -159,7 +189,10 @@ describe('end to end through BullMQ', () => {
 describe('delivery guarantees', () => {
   it('two concurrent deliveries of the same dispatch execute the job once', async () => {
     const id = await submit({ type: 'demo.echo', payload: {} });
-    const [a, b] = await Promise.all([executor('w-a').process(dispatchOf(id)), executor('w-b').process(dispatchOf(id))]);
+    const [a, b] = await Promise.all([
+      executor('w-a').process(dispatchOf(id)),
+      executor('w-b').process(dispatchOf(id)),
+    ]);
     expect([a, b].sort()).toEqual(['skipped', 'succeeded']);
     expect(await attempts(id)).toHaveLength(1);
   });
@@ -174,7 +207,7 @@ describe('delivery guarantees', () => {
   it('a stale dispatch for an older attempt cannot start the job', async () => {
     const id = await submit({ type: 'demo.flaky', payload: { failureRate: 1 }, maxAttempts: 3 });
     expect(await executor('w').process(dispatchOf(id, 1))).toBe('retry');
-    await ctx.services.pool.query("UPDATE jobs SET run_at = now() WHERE id = $1", [id]);
+    await ctx.services.pool.query('UPDATE jobs SET run_at = now() WHERE id = $1', [id]);
     await ctx.services.jobExecution.promoteDue(10);
     // The queue now holds a dispatch for attempt 2; a duplicate of attempt 1 arrives late.
     expect(await executor('w').process(dispatchOf(id, 1))).toBe('skipped');
@@ -183,7 +216,10 @@ describe('delivery guarantees', () => {
 
   it('a cancelled job is skipped when its dispatch arrives', async () => {
     const id = await submit({ type: 'demo.echo', payload: {} });
-    await ctx.services.jobCommands.cancel(t.projectId, id, { actor: { type: 'system', id: 't' }, correlationId: null });
+    await ctx.services.jobCommands.cancel(t.projectId, id, {
+      actor: { type: 'system', id: 't' },
+      correlationId: null,
+    });
     expect(await executor('w').process(dispatchOf(id))).toBe('skipped');
     expect(await attempts(id)).toHaveLength(0);
   });
@@ -250,7 +286,9 @@ describe('graceful shutdown', () => {
     await pipeline.stop();
     const job = await ctx.services.jobQueries.get(t.projectId, id, '0/0');
     expect(job.status).toBe('succeeded');
-    const { rows } = await ctx.services.pool.query('SELECT status FROM workers ORDER BY started_at DESC LIMIT 1');
+    const { rows } = await ctx.services.pool.query(
+      'SELECT status FROM workers ORDER BY started_at DESC LIMIT 1',
+    );
     expect(rows[0].status).toBe('offline');
   });
 

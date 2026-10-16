@@ -6,7 +6,9 @@ import { cursorOf, ORIGIN, readCommittedEvents, type EventCursor } from '../even
 import type { JobEventRow } from '../jobs/model.js';
 
 /** Upper bounds (ms) of the latency histogram buckets; the last bucket is +Inf. Shared with the SQL schema. */
-export const LATENCY_BUCKETS_MS = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 30000, 60000] as const;
+export const LATENCY_BUCKETS_MS = [
+  5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 30000, 60000,
+] as const;
 export const HISTOGRAM_SIZE = LATENCY_BUCKETS_MS.length + 1;
 
 export function bucketIndex(ms: number): number {
@@ -49,9 +51,10 @@ export class Projector {
   /** Returns true when a full batch was processed (more events are probably waiting). */
   async tick(): Promise<boolean> {
     return withTransaction(this.pool, async (client) => {
-      const { rows: lock } = await client.query<{ ok: boolean }>('SELECT pg_try_advisory_xact_lock($1) AS ok', [
-        PROJECTOR_LOCK_KEY,
-      ]);
+      const { rows: lock } = await client.query<{ ok: boolean }>(
+        'SELECT pg_try_advisory_xact_lock($1) AS ok',
+        [PROJECTOR_LOCK_KEY],
+      );
       if (!lock[0]?.ok) return false;
       const cursor = await this.checkpoint(client);
       const events = await readCommittedEvents(client, cursor, this.batchSize);
@@ -179,7 +182,9 @@ export class Projector {
       }
     }
 
-    const countEntries = [...counts.entries()].filter(([, d]) => d !== 0).map(([k, d]) => [...k.split('|'), d] as const);
+    const countEntries = [...counts.entries()]
+      .filter(([, d]) => d !== 0)
+      .map(([k, d]) => [...k.split('|'), d] as const);
     if (countEntries.length > 0) {
       await client.query(
         `INSERT INTO project_job_counts AS c (project_id, status, count)

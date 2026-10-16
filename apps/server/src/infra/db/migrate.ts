@@ -6,7 +6,10 @@ import { sha256Hex } from '../../lib/crypto.js';
 import type { Logger } from '../../lib/logger.js';
 
 /** apps/server/migrations, both from src/ (tsx) and dist/ (compiled). */
-export const MIGRATIONS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../migrations');
+export const MIGRATIONS_DIR = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../../migrations',
+);
 
 // Arbitrary constant: serialises concurrent migration runs (e.g. several containers starting at once).
 const MIGRATION_LOCK_KEY = 727_301_001;
@@ -52,7 +55,10 @@ export async function migrate(pool: pg.Pool, logger: Logger, dir = MIGRATIONS_DI
       await client.query('BEGIN');
       try {
         await client.query(sql);
-        await client.query('INSERT INTO schema_migrations (version, checksum) VALUES ($1, $2)', [file, checksum]);
+        await client.query('INSERT INTO schema_migrations (version, checksum) VALUES ($1, $2)', [
+          file,
+          checksum,
+        ]);
         await client.query('COMMIT');
       } catch (err) {
         await client.query('ROLLBACK');

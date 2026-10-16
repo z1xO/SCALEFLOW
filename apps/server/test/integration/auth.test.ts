@@ -1,5 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { asKey, asUser, createApiKey, createTenant, createTestContext, createUser, ORIGIN, type TestContext } from '../helpers/context.js';
+import {
+  asKey,
+  asUser,
+  createApiKey,
+  createTenant,
+  createTestContext,
+  createUser,
+  ORIGIN,
+  type TestContext,
+} from '../helpers/context.js';
 
 let ctx: TestContext;
 beforeAll(async () => {
@@ -35,7 +44,11 @@ describe('registration and sessions', () => {
     expect(me.statusCode).toBe(200);
     expect(me.json().user.email).toBe('Alice@Example.test');
 
-    const out = await ctx.app.inject({ method: 'POST', url: '/v1/auth/logout', headers: { cookie, origin: ORIGIN } });
+    const out = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/auth/logout',
+      headers: { cookie, origin: ORIGIN },
+    });
     expect(out.statusCode).toBe(204);
     const after = await ctx.app.inject({ method: 'GET', url: '/v1/auth/me', headers: { cookie } });
     expect(after.statusCode).toBe(401);
@@ -43,7 +56,9 @@ describe('registration and sessions', () => {
 
   it('rejects duplicate emails case-insensitively', async () => {
     const body = { email: 'dup@example.test', password: 'a-long-password', name: 'Dup' };
-    expect((await ctx.app.inject({ method: 'POST', url: '/v1/auth/register', payload: body })).statusCode).toBe(201);
+    expect(
+      (await ctx.app.inject({ method: 'POST', url: '/v1/auth/register', payload: body })).statusCode,
+    ).toBe(201);
     const again = await ctx.app.inject({
       method: 'POST',
       url: '/v1/auth/register',
@@ -98,7 +113,12 @@ describe('registration and sessions', () => {
       payload: { name: 'x' },
     });
     expect(noOrigin.statusCode).toBe(403);
-    const ok = await ctx.app.inject({ method: 'POST', url: '/v1/projects', headers: asUser(user), payload: { name: 'x' } });
+    const ok = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/projects',
+      headers: asUser(user),
+      payload: { name: 'x' },
+    });
     expect(ok.statusCode).toBe(201);
   });
 });
@@ -116,9 +136,16 @@ describe('API keys', () => {
     expect(res.headers['cache-control']).toBe('no-store');
     const { secret, apiKey } = res.json();
     expect(secret).toMatch(/^sf_[A-Za-z0-9_-]{43}$/);
-    const list = await ctx.app.inject({ method: 'GET', url: `/v1/projects/${projectId}/api-keys`, headers: asUser(user) });
+    const list = await ctx.app.inject({
+      method: 'GET',
+      url: `/v1/projects/${projectId}/api-keys`,
+      headers: asUser(user),
+    });
     expect(list.body).not.toContain(secret);
-    const { rows } = await ctx.services.pool.query('SELECT key_hash, key_prefix FROM api_keys WHERE id = $1', [apiKey.id]);
+    const { rows } = await ctx.services.pool.query(
+      'SELECT key_hash, key_prefix FROM api_keys WHERE id = $1',
+      [apiKey.id],
+    );
     expect(rows[0].key_prefix).toBe(secret.slice(0, 11));
     expect(Buffer.isBuffer(rows[0].key_hash)).toBe(true);
     expect(rows[0].key_hash.toString('utf8')).not.toContain(secret);
@@ -126,7 +153,11 @@ describe('API keys', () => {
 
   it('revocation takes effect immediately, even with a warm auth cache', async () => {
     const { user, projectId, apiKey } = await createTenant(ctx.services);
-    const ok = await ctx.app.inject({ method: 'GET', url: `/v1/projects/${projectId}/jobs`, headers: asKey(apiKey) });
+    const ok = await ctx.app.inject({
+      method: 'GET',
+      url: `/v1/projects/${projectId}/jobs`,
+      headers: asKey(apiKey),
+    });
     expect(ok.statusCode).toBe(200); // cache is now warm
     const keys = (await ctx.services.apiKeys.list(projectId))[0];
     const revoke = await ctx.app.inject({
@@ -135,7 +166,11 @@ describe('API keys', () => {
       headers: asUser(user),
     });
     expect(revoke.statusCode).toBe(200);
-    const denied = await ctx.app.inject({ method: 'GET', url: `/v1/projects/${projectId}/jobs`, headers: asKey(apiKey) });
+    const denied = await ctx.app.inject({
+      method: 'GET',
+      url: `/v1/projects/${projectId}/jobs`,
+      headers: asKey(apiKey),
+    });
     expect(denied.statusCode).toBe(401);
   });
 
@@ -152,10 +187,17 @@ describe('API keys', () => {
     const { secret: newSecret, apiKey: newKey } = rot.json();
     expect(newKey.rotatedFrom).toBe(keyId);
     expect(
-      (await ctx.app.inject({ method: 'GET', url: `/v1/projects/${projectId}/jobs`, headers: asKey(apiKey) })).statusCode,
+      (await ctx.app.inject({ method: 'GET', url: `/v1/projects/${projectId}/jobs`, headers: asKey(apiKey) }))
+        .statusCode,
     ).toBe(401);
     expect(
-      (await ctx.app.inject({ method: 'GET', url: `/v1/projects/${projectId}/jobs`, headers: asKey(newSecret) })).statusCode,
+      (
+        await ctx.app.inject({
+          method: 'GET',
+          url: `/v1/projects/${projectId}/jobs`,
+          headers: asKey(newSecret),
+        })
+      ).statusCode,
     ).toBe(200);
 
     // With a grace period, both keys work.
@@ -167,7 +209,13 @@ describe('API keys', () => {
     });
     expect(rot2.json().previous.expiresAt).not.toBeNull();
     expect(
-      (await ctx.app.inject({ method: 'GET', url: `/v1/projects/${projectId}/jobs`, headers: asKey(newSecret) })).statusCode,
+      (
+        await ctx.app.inject({
+          method: 'GET',
+          url: `/v1/projects/${projectId}/jobs`,
+          headers: asKey(newSecret),
+        })
+      ).statusCode,
     ).toBe(200);
   });
 
@@ -182,16 +230,30 @@ describe('API keys', () => {
     });
     expect(res.statusCode).toBe(403);
     expect(
-      (await ctx.app.inject({ method: 'GET', url: `/v1/projects/${projectId}/jobs`, headers: asKey(readOnly) })).statusCode,
+      (
+        await ctx.app.inject({
+          method: 'GET',
+          url: `/v1/projects/${projectId}/jobs`,
+          headers: asKey(readOnly),
+        })
+      ).statusCode,
     ).toBe(200);
   });
 
   it('API keys cannot manage keys or call user-only endpoints', async () => {
     const { projectId, apiKey } = await createTenant(ctx.services);
     expect(
-      (await ctx.app.inject({ method: 'GET', url: `/v1/projects/${projectId}/api-keys`, headers: asKey(apiKey) })).statusCode,
+      (
+        await ctx.app.inject({
+          method: 'GET',
+          url: `/v1/projects/${projectId}/api-keys`,
+          headers: asKey(apiKey),
+        })
+      ).statusCode,
     ).toBe(403);
-    expect((await ctx.app.inject({ method: 'GET', url: '/v1/projects', headers: asKey(apiKey) })).statusCode).toBe(403);
+    expect(
+      (await ctx.app.inject({ method: 'GET', url: '/v1/projects', headers: asKey(apiKey) })).statusCode,
+    ).toBe(403);
   });
 
   it('rejects malformed and unknown bearer tokens', async () => {

@@ -15,7 +15,9 @@ export const ORIGIN = 'http://localhost:3000';
  * isolated from other files running in parallel) and its own Redis key prefix.
  */
 export async function createTestDatabase(): Promise<string> {
-  const name = `scaleflow_test_w${workerId()}_${randomToken(4).toLowerCase().replace(/[^a-z0-9]/g, 'x')}`;
+  const name = `scaleflow_test_w${workerId()}_${randomToken(4)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, 'x')}`;
   const admin = new pg.Client({ connectionString: adminDatabaseUrl() });
   await admin.connect();
   try {
@@ -102,14 +104,20 @@ export interface TestUser {
 }
 
 export async function createUser(services: Services, name = 'Test User'): Promise<TestUser> {
-  const email = `${randomToken(6).replace(/[^A-Za-z0-9]/g, 'x').toLowerCase()}@example.test`;
+  const email = `${randomToken(6)
+    .replace(/[^A-Za-z0-9]/g, 'x')
+    .toLowerCase()}@example.test`;
   const password = 'correct-horse-battery-staple';
   const user = await services.auth.register({ email, password, name });
   const { token } = await services.auth.login({ email, password }, {});
   return { id: user.id, email, cookie: `${SESSION_COOKIE}=${token}` };
 }
 
-export async function createProject(services: Services, user: TestUser, name = 'Test project'): Promise<string> {
+export async function createProject(
+  services: Services,
+  user: TestUser,
+  name = 'Test project',
+): Promise<string> {
   const project = await services.projects.create(user.id, { name });
   return project.id;
 }
@@ -130,7 +138,9 @@ export async function createApiKey(
 }
 
 /** Sets up one user with one project and one API key. */
-export async function createTenant(services: Services): Promise<{ user: TestUser; projectId: string; apiKey: string }> {
+export async function createTenant(
+  services: Services,
+): Promise<{ user: TestUser; projectId: string; apiKey: string }> {
   const user = await createUser(services);
   const projectId = await createProject(services, user);
   const apiKey = await createApiKey(services, projectId, user);

@@ -34,10 +34,16 @@ export default function (t) {
     submitJob(t, { type: 'demo.sleep', payload: { durationMs: 20 } });
   } else if (r < 0.8) {
     // Poll the newest job (what an SDK waiting on a job would do).
-    const list = http.get(`${API}/v1/projects/${t.projectId}/jobs?limit=1`, { ...headers(t.key), tags: { name: 'GET /jobs' } });
+    const list = http.get(`${API}/v1/projects/${t.projectId}/jobs?limit=1`, {
+      ...headers(t.key),
+      tags: { name: 'GET /jobs' },
+    });
     const id = list.status === 200 ? list.json('items.0.id') : null;
     if (id) {
-      const res = http.get(`${API}/v1/projects/${t.projectId}/jobs/${id}`, { ...headers(t.key), tags: { name: 'GET /jobs/:id' } });
+      const res = http.get(`${API}/v1/projects/${t.projectId}/jobs/${id}`, {
+        ...headers(t.key),
+        tags: { name: 'GET /jobs/:id' },
+      });
       check(res, { 'job read (200)': (x) => x.status === 200 });
     }
   } else {

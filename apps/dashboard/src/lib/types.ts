@@ -1,6 +1,14 @@
 /** Mirrors the API response schemas (see /openapi.json). */
 
-export const JOB_STATUSES = ['scheduled', 'queued', 'running', 'retry_wait', 'succeeded', 'failed', 'cancelled'] as const;
+export const JOB_STATUSES = [
+  'scheduled',
+  'queued',
+  'running',
+  'retry_wait',
+  'succeeded',
+  'failed',
+  'cancelled',
+] as const;
 export type JobStatus = (typeof JOB_STATUSES)[number];
 export type Role = 'owner' | 'developer' | 'viewer';
 

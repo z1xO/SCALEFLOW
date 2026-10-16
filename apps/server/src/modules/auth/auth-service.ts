@@ -52,7 +52,12 @@ export class AuthService {
   constructor(
     private readonly pool: pg.Pool,
     private readonly redis: Redis,
-    private readonly opts: { prefix: string; sessionTtlHours: number; scryptLogN: number; allowRegistration: boolean },
+    private readonly opts: {
+      prefix: string;
+      sessionTtlHours: number;
+      scryptLogN: number;
+      allowRegistration: boolean;
+    },
     private readonly logger: Logger,
   ) {}
 
@@ -120,9 +125,10 @@ export class AuthService {
 
   async logout(token: string): Promise<void> {
     const hash = sha256(token);
-    await this.pool.query('UPDATE sessions SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL', [
-      hash,
-    ]);
+    await this.pool.query(
+      'UPDATE sessions SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL',
+      [hash],
+    );
     await this.redis.del(this.sessionKey(hash));
   }
 
@@ -179,7 +185,12 @@ export class AuthService {
         await this.cacheSet(key, 'negative', NEGATIVE_TTL_S);
         return null;
       }
-      entry = { apiKeyId: k.id, projectId: k.project_id, scopes: k.scopes, expiresAt: k.expires_at?.getTime() ?? null };
+      entry = {
+        apiKeyId: k.id,
+        projectId: k.project_id,
+        scopes: k.scopes,
+        expiresAt: k.expires_at?.getTime() ?? null,
+      };
       // Never cache past the key's own expiry.
       const ttl = entry.expiresAt
         ? Math.max(1, Math.min(AUTH_CACHE_TTL_S, Math.floor((entry.expiresAt - Date.now()) / 1000)))

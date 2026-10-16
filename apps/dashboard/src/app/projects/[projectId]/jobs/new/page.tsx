@@ -13,12 +13,17 @@ const TEMPLATES: Record<string, Record<string, unknown>> = {
   'demo.sleep': { durationMs: 2000 },
   'demo.flaky': { succeedOnAttempt: 3 },
   'demo.cpu': { iterations: 200000 },
-  'webhook.deliver': { url: 'https://example.com/webhooks/scaleflow', method: 'POST', body: { event: 'order.paid', orderId: 42 } },
+  'webhook.deliver': {
+    url: 'https://example.com/webhooks/scaleflow',
+    method: 'POST',
+    body: { event: 'order.paid', orderId: 42 },
+  },
 };
 
 function issuesOf(err: unknown): string[] {
   if (!(err instanceof ApiError)) return [];
-  const d = err.details as { issues?: { path: string; message: string }[] } | { path?: string; message?: string }[] | undefined;
+  const d = err.details as
+    { issues?: { path: string; message: string }[] } | { path?: string; message?: string }[] | undefined;
   if (Array.isArray(d)) return d.map((i) => `${i.path ?? ''} ${i.message ?? ''}`.trim());
   return d?.issues?.map((i) => `${i.path || 'payload'}: ${i.message}`) ?? [];
 }
@@ -113,21 +118,51 @@ export default function SubmitJobPage() {
               </Field>
             </div>
             <Field label="Payload (JSON)" error={jsonError}>
-              {(id) => <Textarea id={id} rows={10} value={payload} onChange={(e) => setPayload(e.target.value)} spellCheck={false} />}
+              {(id) => (
+                <Textarea
+                  id={id}
+                  rows={10}
+                  value={payload}
+                  onChange={(e) => setPayload(e.target.value)}
+                  spellCheck={false}
+                />
+              )}
             </Field>
           </div>
         </Card>
         <Card title="Delivery options">
           <div className="flex flex-col gap-4">
             <Field label="Delay (seconds)" hint="0 runs immediately; anything else creates a scheduled job.">
-              {(id) => <Input id={id} type="number" min={0} max={2592000} value={delaySeconds} onChange={(e) => setDelaySeconds(e.target.value)} />}
+              {(id) => (
+                <Input
+                  id={id}
+                  type="number"
+                  min={0}
+                  max={2592000}
+                  value={delaySeconds}
+                  onChange={(e) => setDelaySeconds(e.target.value)}
+                />
+              )}
             </Field>
             <Field label="Max attempts">
-              {(id) => <Input id={id} type="number" min={1} max={25} value={maxAttempts} onChange={(e) => setMaxAttempts(e.target.value)} />}
+              {(id) => (
+                <Input
+                  id={id}
+                  type="number"
+                  min={1}
+                  max={25}
+                  value={maxAttempts}
+                  onChange={(e) => setMaxAttempts(e.target.value)}
+                />
+              )}
             </Field>
             <Field label="Backoff">
               {(id) => (
-                <Select id={id} value={backoffType} onChange={(e) => setBackoffType(e.target.value as 'exponential' | 'fixed')}>
+                <Select
+                  id={id}
+                  value={backoffType}
+                  onChange={(e) => setBackoffType(e.target.value as 'exponential' | 'fixed')}
+                >
                   <option value="exponential">Exponential with jitter</option>
                   <option value="fixed">Fixed</option>
                 </Select>
@@ -135,17 +170,51 @@ export default function SubmitJobPage() {
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Base delay (ms)">
-                {(id) => <Input id={id} type="number" min={100} value={baseDelayMs} onChange={(e) => setBaseDelayMs(e.target.value)} />}
+                {(id) => (
+                  <Input
+                    id={id}
+                    type="number"
+                    min={100}
+                    value={baseDelayMs}
+                    onChange={(e) => setBaseDelayMs(e.target.value)}
+                  />
+                )}
               </Field>
               <Field label="Max delay (ms)">
-                {(id) => <Input id={id} type="number" min={100} value={maxDelayMs} onChange={(e) => setMaxDelayMs(e.target.value)} />}
+                {(id) => (
+                  <Input
+                    id={id}
+                    type="number"
+                    min={100}
+                    value={maxDelayMs}
+                    onChange={(e) => setMaxDelayMs(e.target.value)}
+                  />
+                )}
               </Field>
             </div>
             <Field label="Timeout (ms)" hint="Leave empty for the job type's default.">
-              {(id) => <Input id={id} type="number" min={100} value={timeoutMs} onChange={(e) => setTimeoutMs(e.target.value)} />}
+              {(id) => (
+                <Input
+                  id={id}
+                  type="number"
+                  min={100}
+                  value={timeoutMs}
+                  onChange={(e) => setTimeoutMs(e.target.value)}
+                />
+              )}
             </Field>
-            <Field label="Idempotency key" hint="Optional. Re-submitting with the same key returns the same job.">
-              {(id) => <Input id={id} value={idempotencyKey} onChange={(e) => setIdempotencyKey(e.target.value)} maxLength={200} />}
+            <Field
+              label="Idempotency key"
+              hint="Optional. Re-submitting with the same key returns the same job."
+            >
+              {(id) => (
+                <Input
+                  id={id}
+                  value={idempotencyKey}
+                  onChange={(e) => setIdempotencyKey(e.target.value)}
+                  maxLength={200}
+                />
+              )}
             </Field>
           </div>
         </Card>

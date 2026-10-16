@@ -99,7 +99,10 @@ export function nextOccurrence(cron: string, timezone: string, after: Date): Dat
   try {
     return CronExpressionParser.parse(cron, { currentDate: after, tz: timezone }).next().toDate();
   } catch (err) {
-    throw new UnprocessableError('invalid_cron', `Invalid cron expression or time zone: ${err instanceof Error ? err.message : String(err)}`);
+    throw new UnprocessableError(
+      'invalid_cron',
+      `Invalid cron expression or time zone: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 
@@ -140,10 +143,19 @@ export class ScheduleService {
     return toDto(await this.getRow(projectId, id));
   }
 
-  async create(projectId: string, input: z.infer<typeof CreateScheduleSchema>, actor: Actor): Promise<ScheduleDto> {
+  async create(
+    projectId: string,
+    input: z.infer<typeof CreateScheduleSchema>,
+    actor: Actor,
+  ): Promise<ScheduleDto> {
     assertMinimumInterval(input.cron, input.timezone);
     // Validate the job template exactly like a real submission would be validated.
-    this.commands.prepare({ type: input.jobType, queue: input.queue, payload: input.payload, ...input.jobOptions });
+    this.commands.prepare({
+      type: input.jobType,
+      queue: input.queue,
+      payload: input.payload,
+      ...input.jobOptions,
+    });
     const next = nextOccurrence(input.cron, input.timezone, new Date());
     try {
       return await withTransaction(this.pool, async (client) => {
@@ -177,7 +189,10 @@ export class ScheduleService {
       });
     } catch (err) {
       if (pgErrorCode(err) === PgErrorCode.UniqueViolation) {
-        throw new ConflictError('schedule_name_taken', 'A schedule with this name already exists in the project');
+        throw new ConflictError(
+          'schedule_name_taken',
+          'A schedule with this name already exists in the project',
+        );
       }
       throw err;
     }
@@ -203,13 +218,23 @@ export class ScheduleService {
       assertMinimumInterval(cron, timezone);
       this.commands.prepare({ type: current.job_type, queue: current.queue, payload, ...jobOptions });
       const enabled = input.enabled ?? current.enabled;
-      const timingChanged = cron !== current.cron || timezone !== current.timezone || (enabled && !current.enabled);
+      const timingChanged =
+        cron !== current.cron || timezone !== current.timezone || (enabled && !current.enabled);
       const nextRunAt = timingChanged ? nextOccurrence(cron, timezone, new Date()) : current.next_run_at;
       const { rows: updated } = await client.query<ScheduleRow>(
         `UPDATE scheduled_jobs SET cron = $3, timezone = $4, payload = $5, job_options = $6, enabled = $7,
                 next_run_at = $8, version = version + 1, updated_at = now()
          WHERE id = $1 AND project_id = $2 RETURNING *`,
-        [id, projectId, cron, timezone, JSON.stringify(payload), JSON.stringify(jobOptions), enabled, nextRunAt],
+        [
+          id,
+          projectId,
+          cron,
+          timezone,
+          JSON.stringify(payload),
+          JSON.stringify(jobOptions),
+          enabled,
+          nextRunAt,
+        ],
       );
       await writeAudit(client, {
         projectId,
@@ -225,16 +250,30 @@ export class ScheduleService {
 
   async remove(projectId: string, id: string, actor: Actor): Promise<void> {
     await withTransaction(this.pool, async (client) => {
-      const { rowCount } = await client.query('DELETE FROM scheduled_jobs WHERE id = $1 AND project_id = $2', [id, projectId]);
+      const { rowCount } = await client.query(
+        'DELETE FROM scheduled_jobs WHERE id = $1 AND project_id = $2',
+        [id, projectId],
+      );
       if (rowCount === 0) throw new NotFoundError('Schedule');
-      await writeAudit(client, { projectId, actor, action: 'schedule.deleted', targetType: 'schedule', targetId: id });
+      await writeAudit(client, {
+        projectId,
+        actor,
+        action: 'schedule.deleted',
+        targetType: 'schedule',
+        targetId: id,
+      });
     });
   }
 
   /** "Run now": creates one job from the template immediately, without moving the schedule. */
   async trigger(projectId: string, id: string, correlationId: string | null): Promise<JobDto> {
     const s = await this.getRow(projectId, id);
-    const prepared = this.commands.prepare({ type: s.job_type, queue: s.queue, payload: s.payload, ...s.job_options });
+    const prepared = this.commands.prepare({
+      type: s.job_type,
+      queue: s.queue,
+      payload: s.payload,
+      ...s.job_options,
+    });
     const [result] = await withTransaction(this.pool, (client) =>
       insertJobs(client, projectId, [prepared], { correlationId, scheduledJobId: s.id }),
     );
@@ -267,7 +306,9 @@ export class ScheduleService {
         } catch (err) {
           // An expression that became invalid (e.g. unknown time zone after an OS update): disable it.
           this.logger.error({ err, scheduleId: s.id }, 'schedule has an invalid cron expression; disabling');
-          await client.query('UPDATE scheduled_jobs SET enabled = false, updated_at = now() WHERE id = $1', [s.id]);
+          await client.query('UPDATE scheduled_jobs SET enabled = false, updated_at = now() WHERE id = $1', [
+            s.id,
+          ]);
           continue;
         }
         let jobId: string | null = null;
@@ -302,17 +343,24 @@ export class ScheduleService {
                   updated_at = now() WHERE id = $1`,
           [s.id, nextRunAt, now, jobId],
         );
-        fired.push({ scheduleId: s.id, projectId: s.project_id, jobId, tick, nextRunAt, ...(error ? { error } : {}) });
+        fired.push({
+          scheduleId: s.id,
+          projectId: s.project_id,
+          jobId,
+          tick,
+          nextRunAt,
+          ...(error ? { error } : {}),
+        });
       }
       return fired;
     });
   }
 
   private async getRow(projectId: string, id: string): Promise<ScheduleRow> {
-    const { rows } = await this.pool.query<ScheduleRow>('SELECT * FROM scheduled_jobs WHERE id = $1 AND project_id = $2', [
-      id,
-      projectId,
-    ]);
+    const { rows } = await this.pool.query<ScheduleRow>(
+      'SELECT * FROM scheduled_jobs WHERE id = $1 AND project_id = $2',
+      [id, projectId],
+    );
     const row = rows[0];
     if (!row) throw new NotFoundError('Schedule');
     return row;

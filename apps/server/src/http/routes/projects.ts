@@ -3,7 +3,11 @@ import { z } from 'zod';
 import type { Services } from '../../container.js';
 import { CreateApiKeySchema, RotateApiKeySchema } from '../../modules/auth/api-keys.js';
 import { actorOf } from '../../modules/auth/principal.js';
-import { AddMemberSchema, CreateProjectSchema, UpdateProjectSchema } from '../../modules/projects/projects.js';
+import {
+  AddMemberSchema,
+  CreateProjectSchema,
+  UpdateProjectSchema,
+} from '../../modules/projects/projects.js';
 import { authorizeProject, requireUser } from '../auth.js';
 import { ApiKeySchema, errorResponses, IdParam, MemberSchema, ProjectSchema } from '../schemas.js';
 
@@ -64,7 +68,12 @@ export const projectRoutes =
         },
       },
       async (request) => {
-        const { actor } = await authorizeProject(services, request, request.params.projectId, 'project:manage');
+        const { actor } = await authorizeProject(
+          services,
+          request,
+          request.params.projectId,
+          'project:manage',
+        );
         return { project: await services.projects.rename(request.params.projectId, request.body, actor) };
       },
     );
@@ -98,7 +107,12 @@ export const projectRoutes =
         },
       },
       async (request, reply) => {
-        const { actor } = await authorizeProject(services, request, request.params.projectId, 'members:manage');
+        const { actor } = await authorizeProject(
+          services,
+          request,
+          request.params.projectId,
+          'members:manage',
+        );
         const member = await services.projects.addMember(request.params.projectId, request.body, actor);
         return reply.status(201).send({ member });
       },
@@ -114,7 +128,12 @@ export const projectRoutes =
         },
       },
       async (request, reply) => {
-        const { actor } = await authorizeProject(services, request, request.params.projectId, 'members:manage');
+        const { actor } = await authorizeProject(
+          services,
+          request,
+          request.params.projectId,
+          'members:manage',
+        );
         await services.projects.removeMember(request.params.projectId, request.params.userId, actor);
         return reply.status(204).send(null);
       },
@@ -200,7 +219,9 @@ export const projectRoutes =
       },
       async (request) => {
         const { actor } = await authorizeProject(services, request, request.params.projectId, 'keys:manage');
-        return { apiKey: await services.apiKeys.revoke(request.params.projectId, request.params.keyId, actor) };
+        return {
+          apiKey: await services.apiKeys.revoke(request.params.projectId, request.params.keyId, actor),
+        };
       },
     );
     done();

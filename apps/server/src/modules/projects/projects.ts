@@ -92,7 +92,11 @@ export class ProjectService {
     return toDto({ ...p, role });
   }
 
-  async rename(projectId: string, input: z.infer<typeof UpdateProjectSchema>, actor: Actor): Promise<ProjectDto> {
+  async rename(
+    projectId: string,
+    input: z.infer<typeof UpdateProjectSchema>,
+    actor: Actor,
+  ): Promise<ProjectDto> {
     return withTransaction(this.pool, async (client) => {
       const { rows } = await client.query<ProjectRow>(
         'UPDATE projects SET name = $2, updated_at = now() WHERE id = $1 RETURNING *',
@@ -133,7 +137,11 @@ export class ProjectService {
     }));
   }
 
-  async addMember(projectId: string, input: z.infer<typeof AddMemberSchema>, actor: Actor): Promise<MemberDto> {
+  async addMember(
+    projectId: string,
+    input: z.infer<typeof AddMemberSchema>,
+    actor: Actor,
+  ): Promise<MemberDto> {
     const member = await withTransaction(this.pool, async (client) => {
       const { rows: users } = await client.query<{ id: string; email: string; name: string }>(
         'SELECT id, email, name FROM users WHERE lower(email) = lower($1)',
@@ -185,7 +193,8 @@ export class ProjectService {
           "SELECT 1 FROM project_members WHERE project_id = $1 AND role = 'owner' LIMIT 1",
           [projectId],
         );
-        if (owners.length === 0) throw new ConflictError('last_owner', 'A project must keep at least one owner');
+        if (owners.length === 0)
+          throw new ConflictError('last_owner', 'A project must keep at least one owner');
       }
       await writeAudit(client, {
         projectId,

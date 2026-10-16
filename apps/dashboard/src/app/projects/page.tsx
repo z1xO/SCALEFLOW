@@ -19,7 +19,10 @@ function Projects() {
   const create = useMutation({
     mutationFn: () => api.createProject(name.trim()),
     onSuccess: async ({ project }) => {
-      await Promise.all([qc.invalidateQueries({ queryKey: ['projects'] }), qc.invalidateQueries({ queryKey: ['me'] })]);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['projects'] }),
+        qc.invalidateQueries({ queryKey: ['me'] }),
+      ]);
       router.push(`/projects/${project.id}`);
     },
   });
@@ -42,7 +45,9 @@ function Projects() {
         ) : projects.isError ? (
           <ErrorState error={projects.error} onRetry={() => void projects.refetch()} />
         ) : projects.data.items.length === 0 ? (
-          <EmptyState title="No projects yet">Create your first project below to get an API key and submit jobs.</EmptyState>
+          <EmptyState title="No projects yet">
+            Create your first project below to get an API key and submit jobs.
+          </EmptyState>
         ) : (
           <ul className="divide-y divide-line">
             {projects.data.items.map((p) => (
@@ -62,7 +67,15 @@ function Projects() {
         <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1">
             <Field label="Project name">
-              {(id) => <Input id={id} value={name} onChange={(e) => setName(e.target.value)} maxLength={100} required />}
+              {(id) => (
+                <Input
+                  id={id}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={100}
+                  required
+                />
+              )}
             </Field>
           </div>
           <Button type="submit" variant="primary" busy={create.isPending} disabled={!name.trim()}>

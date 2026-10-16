@@ -1,5 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { asKey, asUser, createTenant, createTestContext, createUser, type TestContext } from '../helpers/context.js';
+import {
+  asKey,
+  asUser,
+  createTenant,
+  createTestContext,
+  createUser,
+  type TestContext,
+} from '../helpers/context.js';
 
 let ctx: TestContext;
 let a: Awaited<ReturnType<typeof createTenant>>;
@@ -68,7 +75,7 @@ describe('tenant isolation', () => {
     expect(still.status).toBe('queued');
   });
 
-  it("project B cannot submit jobs into A", async () => {
+  it('project B cannot submit jobs into A', async () => {
     const res = await ctx.app.inject({
       method: 'POST',
       url: `/v1/projects/${a.projectId}/jobs`,
@@ -80,7 +87,11 @@ describe('tenant isolation', () => {
 
   it('a user who is not a member sees 404 for the project and its keys', async () => {
     const outsider = await createUser(ctx.services);
-    for (const url of [`/v1/projects/${a.projectId}`, `/v1/projects/${a.projectId}/api-keys`, `/v1/projects/${a.projectId}/jobs/${jobOfA}`]) {
+    for (const url of [
+      `/v1/projects/${a.projectId}`,
+      `/v1/projects/${a.projectId}/api-keys`,
+      `/v1/projects/${a.projectId}/jobs/${jobOfA}`,
+    ]) {
       const res = await ctx.app.inject({ method: 'GET', url, headers: asUser(outsider) });
       expect(res.statusCode, url).toBe(404);
     }
@@ -104,7 +115,15 @@ describe('tenant isolation', () => {
       payload: { email: dev.email, role: 'developer' },
     });
 
-    expect((await ctx.app.inject({ method: 'GET', url: `/v1/projects/${a.projectId}/jobs/${jobOfA}`, headers: asUser(viewer) })).statusCode).toBe(200);
+    expect(
+      (
+        await ctx.app.inject({
+          method: 'GET',
+          url: `/v1/projects/${a.projectId}/jobs/${jobOfA}`,
+          headers: asUser(viewer),
+        })
+      ).statusCode,
+    ).toBe(200);
     expect(
       (
         await ctx.app.inject({
@@ -125,11 +144,31 @@ describe('tenant isolation', () => {
         })
       ).statusCode,
     ).toBe(201);
-    expect((await ctx.app.inject({ method: 'GET', url: `/v1/projects/${a.projectId}/api-keys`, headers: asUser(dev) })).statusCode).toBe(403);
+    expect(
+      (
+        await ctx.app.inject({
+          method: 'GET',
+          url: `/v1/projects/${a.projectId}/api-keys`,
+          headers: asUser(dev),
+        })
+      ).statusCode,
+    ).toBe(403);
 
     // Removing a member revokes access right away (membership cache is invalidated).
-    await ctx.app.inject({ method: 'DELETE', url: `/v1/projects/${a.projectId}/members/${viewer.id}`, headers: asUser(a.user) });
-    expect((await ctx.app.inject({ method: 'GET', url: `/v1/projects/${a.projectId}/jobs/${jobOfA}`, headers: asUser(viewer) })).statusCode).toBe(404);
+    await ctx.app.inject({
+      method: 'DELETE',
+      url: `/v1/projects/${a.projectId}/members/${viewer.id}`,
+      headers: asUser(a.user),
+    });
+    expect(
+      (
+        await ctx.app.inject({
+          method: 'GET',
+          url: `/v1/projects/${a.projectId}/jobs/${jobOfA}`,
+          headers: asUser(viewer),
+        })
+      ).statusCode,
+    ).toBe(404);
   });
 
   it('a project keeps at least one owner', async () => {

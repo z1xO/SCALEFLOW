@@ -10,7 +10,11 @@ import { api } from '@/lib/api';
 import { compact, formatDuration, relativeTime } from '@/lib/format';
 
 export default function SystemPage() {
-  const system = useQuery({ queryKey: ['system', 'queues'], queryFn: api.systemQueues, refetchInterval: 5_000 });
+  const system = useQuery({
+    queryKey: ['system', 'queues'],
+    queryFn: api.systemQueues,
+    refetchInterval: 5_000,
+  });
   const workers = useQuery({ queryKey: ['system', 'workers'], queryFn: api.workers, refetchInterval: 5_000 });
   const s = system.data;
 
@@ -27,14 +31,28 @@ export default function SystemPage() {
       ) : (
         <div className="flex flex-col gap-5">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatTile label="Workers online" value={String(s.workers.online)} sub={s.workers.draining ? `${s.workers.draining} draining` : undefined} />
+            <StatTile
+              label="Workers online"
+              value={String(s.workers.online)}
+              sub={s.workers.draining ? `${s.workers.draining} draining` : undefined}
+            />
             <StatTile
               label="Worker utilization"
-              value={s.workers.capacity ? `${Math.round((s.workers.activeJobs / s.workers.capacity) * 100)}%` : '-'}
+              value={
+                s.workers.capacity ? `${Math.round((s.workers.activeJobs / s.workers.capacity) * 100)}%` : '-'
+              }
               sub={`${s.workers.activeJobs} of ${s.workers.capacity} slots`}
             />
-            <StatTile label="Oldest queued job" value={formatDuration(s.oldestQueuedAgeSeconds * 1000)} sub={`${compact(s.jobs.queued)} queued in total`} />
-            <StatTile label="Outbox backlog" value={compact(s.outbox.pending)} sub={`oldest ${formatDuration(s.outbox.oldestAgeSeconds * 1000)}`} />
+            <StatTile
+              label="Oldest queued job"
+              value={formatDuration(s.oldestQueuedAgeSeconds * 1000)}
+              sub={`${compact(s.jobs.queued)} queued in total`}
+            />
+            <StatTile
+              label="Outbox backlog"
+              value={compact(s.outbox.pending)}
+              sub={`oldest ${formatDuration(s.outbox.oldestAgeSeconds * 1000)}`}
+            />
           </div>
           <Card title="Queues">
             <div className="overflow-x-auto">
@@ -64,8 +82,9 @@ export default function SystemPage() {
                 </tbody>
               </table>
               <p className="mt-2 text-xs text-muted">
-                BullMQ counts. “completed/failed” are delivery records kept for an hour/day; job outcomes live in PostgreSQL.
-                Jobs in PostgreSQL: {s.jobs.scheduled} scheduled · {s.jobs.queued} queued · {s.jobs.running} running · {s.jobs.retry_wait} waiting to retry.
+                BullMQ counts. “completed/failed” are delivery records kept for an hour/day; job outcomes live
+                in PostgreSQL. Jobs in PostgreSQL: {s.jobs.scheduled} scheduled · {s.jobs.queued} queued ·{' '}
+                {s.jobs.running} running · {s.jobs.retry_wait} waiting to retry.
               </p>
             </div>
           </Card>
@@ -76,8 +95,8 @@ export default function SystemPage() {
               <ErrorState error={workers.error} />
             ) : workers.data.items.length === 0 ? (
               <EmptyState title="No workers have reported in the last hour">
-                Start one with <code className="font-mono">npm run dev:worker -w @scaleflow/server</code>. Queued jobs wait until a worker is
-                available; nothing is lost.
+                Start one with <code className="font-mono">npm run dev:worker -w @scaleflow/server</code>.
+                Queued jobs wait until a worker is available; nothing is lost.
               </EmptyState>
             ) : (
               <div className="overflow-x-auto">

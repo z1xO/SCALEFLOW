@@ -35,10 +35,16 @@ export class WorkerRuntime {
     private readonly services: Services,
     private readonly opts: WorkerRuntimeOptions,
   ) {
-    this.executor = new JobExecutor(services.jobExecution, services.handlers, services.logger, services.metrics, {
-      workerId: opts.workerId,
-      leaseMs: opts.leaseMs,
-    });
+    this.executor = new JobExecutor(
+      services.jobExecution,
+      services.handlers,
+      services.logger,
+      services.metrics,
+      {
+        workerId: opts.workerId,
+        leaseMs: opts.leaseMs,
+      },
+    );
     this.registry = new WorkerRegistry(services.pool);
   }
 
@@ -75,7 +81,10 @@ export class WorkerRuntime {
       worker.on('failed', (job, err) => {
         // Reaching here means recording the outcome failed (e.g. Postgres down). The job stays
         // 'running' in Postgres and is recovered by the lease reaper.
-        logger.error({ err, jobId: job?.data.jobId, queue }, 'dispatch processing failed; lease reaper will recover the job');
+        logger.error(
+          { err, jobId: job?.data.jobId, queue },
+          'dispatch processing failed; lease reaper will recover the job',
+        );
       });
       this.bullWorkers.push(worker);
     }
@@ -95,7 +104,10 @@ export class WorkerRuntime {
         return false;
       },
     });
-    logger.info({ workerId: this.opts.workerId, queues: this.opts.queues, concurrency: this.opts.concurrency }, 'worker started');
+    logger.info(
+      { workerId: this.opts.workerId, queues: this.opts.queues, concurrency: this.opts.concurrency },
+      'worker started',
+    );
   }
 
   async stop(): Promise<void> {
@@ -105,7 +117,10 @@ export class WorkerRuntime {
       logger.warn({ err }, 'could not mark worker draining');
     });
     const closing = Promise.all(this.bullWorkers.map((w) => w.close()));
-    const drained = await Promise.race([closing.then(() => true), sleep(this.opts.shutdownGraceMs).then(() => false)]);
+    const drained = await Promise.race([
+      closing.then(() => true),
+      sleep(this.opts.shutdownGraceMs).then(() => false),
+    ]);
     if (!drained) {
       logger.warn({ active: this.executor.activeCount }, 'grace period over; aborting running jobs');
       this.executor.abortAll();

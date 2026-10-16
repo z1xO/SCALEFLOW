@@ -56,7 +56,9 @@ export async function withTransaction<T>(
       await client.query('ROLLBACK');
     } catch (rollbackErr) {
       broken = true;
-      throw new AggregateError([err, rollbackErr], 'transaction failed and rollback failed', { cause: rollbackErr });
+      throw new AggregateError([err, rollbackErr], 'transaction failed and rollback failed', {
+        cause: rollbackErr,
+      });
     }
     throw err;
   } finally {

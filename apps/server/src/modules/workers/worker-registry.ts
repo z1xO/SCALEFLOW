@@ -66,7 +66,10 @@ export class WorkerRegistry {
     );
   }
 
-  async heartbeat(id: string, stats: { activeJobs: number; processed: number; failed: number }): Promise<void> {
+  async heartbeat(
+    id: string,
+    stats: { activeJobs: number; processed: number; failed: number },
+  ): Promise<void> {
     await this.pool.query(
       `UPDATE workers SET last_heartbeat_at = now(), active_jobs = $2, processed_total = $3, failed_total = $4,
               status = CASE WHEN status = 'offline' THEN 'online' ELSE status END, stopped_at = NULL
@@ -106,7 +109,9 @@ export class WorkerRegistry {
   }
 
   async onlineCount(): Promise<number> {
-    const { rows } = await this.pool.query<{ n: number }>("SELECT count(*)::int AS n FROM workers WHERE status = 'online'");
+    const { rows } = await this.pool.query<{ n: number }>(
+      "SELECT count(*)::int AS n FROM workers WHERE status = 'online'",
+    );
     return rows[0]?.n ?? 0;
   }
 }

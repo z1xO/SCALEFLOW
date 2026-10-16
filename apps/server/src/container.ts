@@ -51,7 +51,11 @@ export interface Services {
   close(): Promise<void>;
 }
 
-export function createServices(config: Config, service: string, overrides: { logger?: Logger } = {}): Services {
+export function createServices(
+  config: Config,
+  service: string,
+  overrides: { logger?: Logger } = {},
+): Services {
   const logger = overrides.logger ?? createLogger(config, service);
   const metrics = createMetrics(service);
   const poolOpts = {
@@ -59,7 +63,12 @@ export function createServices(config: Config, service: string, overrides: { log
     connectTimeoutMs: config.DATABASE_CONNECT_TIMEOUT_MS,
   };
   const pool = createPool(
-    { ...poolOpts, connectionString: config.DATABASE_URL, max: config.DATABASE_POOL_MAX, applicationName: `scaleflow-${service}` },
+    {
+      ...poolOpts,
+      connectionString: config.DATABASE_URL,
+      max: config.DATABASE_POOL_MAX,
+      applicationName: `scaleflow-${service}`,
+    },
     logger,
   );
   const readPool = config.DATABASE_READ_URL
@@ -74,7 +83,12 @@ export function createServices(config: Config, service: string, overrides: { log
       )
     : null;
   const readRouter = new ReadRouter(pool, readPool, logger, metrics);
-  const redis = createRedis(config.REDIS_URL, `scaleflow-${service}`, logger, config.REDIS_COMMAND_TIMEOUT_MS);
+  const redis = createRedis(
+    config.REDIS_URL,
+    `scaleflow-${service}`,
+    logger,
+    config.REDIS_COMMAND_TIMEOUT_MS,
+  );
   const prefix = config.REDIS_KEY_PREFIX;
   const queues = new QueueSet(config.REDIS_URL, `${prefix}-bull`, config.QUEUES);
   const handlers = createHandlerRegistry(config);

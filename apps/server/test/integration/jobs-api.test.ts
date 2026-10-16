@@ -33,12 +33,22 @@ describe('job submission', () => {
     const res = await submit({ type: 'demo.sleep', payload: { durationMs: 10 }, maxAttempts: 5 });
     expect(res.statusCode).toBe(201);
     const { job } = res.json();
-    expect(job).toMatchObject({ status: 'queued', type: 'demo.sleep', queue: 'default', maxAttempts: 5, attemptCount: 0 });
+    expect(job).toMatchObject({
+      status: 'queued',
+      type: 'demo.sleep',
+      queue: 'default',
+      maxAttempts: 5,
+      attemptCount: 0,
+    });
     expect(res.headers.location).toBe(`/v1/projects/${t.projectId}/jobs/${job.id}`);
     expect(res.headers['x-request-id']).toBeTruthy();
     expect(job.correlationId).toBe(res.headers['x-request-id']);
     expect(await countRows('SELECT count(*) FROM job_events WHERE job_id = $1', [job.id])).toBe(1);
-    expect(await countRows("SELECT count(*) FROM outbox WHERE aggregate_id = $1 AND published_at IS NULL", [job.id])).toBe(1);
+    expect(
+      await countRows('SELECT count(*) FROM outbox WHERE aggregate_id = $1 AND published_at IS NULL', [
+        job.id,
+      ]),
+    ).toBe(1);
   });
 
   it('delayed jobs are scheduled and get no outbox row until promoted', async () => {
@@ -66,7 +76,12 @@ describe('job submission', () => {
     expect(schema.statusCode).toBe(400);
     expect(schema.json().code).toBe('validation_failed');
 
-    const both = await submit({ type: 'demo.echo', payload: {}, delayMs: 5, runAt: new Date().toISOString() });
+    const both = await submit({
+      type: 'demo.echo',
+      payload: {},
+      delayMs: 5,
+      runAt: new Date().toISOString(),
+    });
     expect(both.statusCode).toBe(400);
   });
 
@@ -98,19 +113,33 @@ describe('idempotency', () => {
     expect(second.statusCode).toBe(200);
     expect(second.headers['idempotent-replayed']).toBe('true');
     expect(second.json().job.id).toBe(first.json().job.id);
-    expect(await countRows('SELECT count(*) FROM jobs WHERE project_id = $1 AND idempotency_key = $2', [t.projectId, 'order-123'])).toBe(1);
+    expect(
+      await countRows('SELECT count(*) FROM jobs WHERE project_id = $1 AND idempotency_key = $2', [
+        t.projectId,
+        'order-123',
+      ]),
+    ).toBe(1);
   });
 
   it('treats semantically equal bodies (different key order) as the same request', async () => {
-    const first = await submit({ type: 'demo.echo', payload: { a: 1, b: 2 } }, { 'idempotency-key': 'order-key-order' });
-    const second = await submit({ payload: { b: 2, a: 1 }, type: 'demo.echo' }, { 'idempotency-key': 'order-key-order' });
+    const first = await submit(
+      { type: 'demo.echo', payload: { a: 1, b: 2 } },
+      { 'idempotency-key': 'order-key-order' },
+    );
+    const second = await submit(
+      { payload: { b: 2, a: 1 }, type: 'demo.echo' },
+      { 'idempotency-key': 'order-key-order' },
+    );
     expect(second.statusCode).toBe(200);
     expect(second.json().job.id).toBe(first.json().job.id);
   });
 
   it('rejects reuse of a key with a different body', async () => {
     await submit({ type: 'demo.echo', payload: { message: 'one' } }, { 'idempotency-key': 'reuse-1' });
-    const res = await submit({ type: 'demo.echo', payload: { message: 'two' } }, { 'idempotency-key': 'reuse-1' });
+    const res = await submit(
+      { type: 'demo.echo', payload: { message: 'two' } },
+      { 'idempotency-key': 'reuse-1' },
+    );
     expect(res.statusCode).toBe(422);
     expect(res.json().code).toBe('idempotency_key_reused');
   });
@@ -153,9 +182,15 @@ describe('concurrent submission without keys', () => {
     expect(responses.every((r) => r.statusCode === 201)).toBe(true);
     const ids = responses.map((r) => r.json().job.id as string);
     expect(new Set(ids).size).toBe(200);
-    expect(await countRows('SELECT count(*) FROM jobs WHERE project_id = $1', [t.projectId])).toBe(before + 200);
+    expect(await countRows('SELECT count(*) FROM jobs WHERE project_id = $1', [t.projectId])).toBe(
+      before + 200,
+    );
     expect(await countRows('SELECT count(*) FROM outbox WHERE aggregate_id = ANY($1)', [ids])).toBe(200);
-    expect(await countRows("SELECT count(*) FROM job_events WHERE job_id = ANY($1) AND type = 'job.created'", [ids])).toBe(200);
+    expect(
+      await countRows("SELECT count(*) FROM job_events WHERE job_id = ANY($1) AND type = 'job.created'", [
+        ids,
+      ]),
+    ).toBe(200);
   });
 });
 
@@ -165,7 +200,13 @@ describe('batch submission', () => {
       method: 'POST',
       url: `/v1/projects/${t.projectId}/jobs/batch`,
       headers: asKey(t.apiKey),
-      payload: { jobs: Array.from({ length: 25 }, (_, i) => ({ type: 'demo.echo', payload: { i }, idempotencyKey: `b-${i}` })) },
+      payload: {
+        jobs: Array.from({ length: 25 }, (_, i) => ({
+          type: 'demo.echo',
+          payload: { i },
+          idempotencyKey: `b-${i}`,
+        })),
+      },
     });
     expect(res.statusCode).toBe(201);
     expect(res.json().items).toHaveLength(25);
@@ -271,7 +312,10 @@ describe('cancellation', () => {
     for (let i = 0; i < 40; i++) {
       const { job } = (await submit({ type: 'demo.echo', payload: { i } })).json();
       const [cancel, claim] = await Promise.allSettled([
-        ctx.services.jobCommands.cancel(t.projectId, job.id, { actor: { type: 'system', id: 'test' }, correlationId: null }),
+        ctx.services.jobCommands.cancel(t.projectId, job.id, {
+          actor: { type: 'system', id: 'test' },
+          correlationId: null,
+        }),
         ctx.services.jobExecution.claim(job.id, 1, 'race-worker', 30_000),
       ]);
       const cancelWon = cancel.status === 'fulfilled';
@@ -316,11 +360,14 @@ describe('manual retry', () => {
     expect(res.json().job).toMatchObject({ status: 'queued', runAttempts: 0, attemptCount: 1 });
     // A dispatch for attempt 2 was written to the outbox in the same transaction.
     const { rows } = await ctx.services.pool.query(
-      "SELECT payload FROM outbox WHERE aggregate_id = $1 ORDER BY id DESC LIMIT 1",
+      'SELECT payload FROM outbox WHERE aggregate_id = $1 ORDER BY id DESC LIMIT 1',
       [job.id],
     );
     expect(rows[0].payload.attempt).toBe(2);
-    const audit = await countRows("SELECT count(*) FROM audit_log WHERE target_id = $1 AND action = 'job.retried'", [job.id]);
+    const audit = await countRows(
+      "SELECT count(*) FROM audit_log WHERE target_id = $1 AND action = 'job.retried'",
+      [job.id],
+    );
     expect(audit).toBe(1);
   });
 });
@@ -390,7 +437,11 @@ describe('queries', () => {
       url: `/v1/projects/${t.projectId}/jobs/${job.id}/events`,
       headers: asKey(t.apiKey),
     });
-    expect(events.json().items.map((e: { type: string }) => e.type)).toEqual(['job.created', 'job.started', 'job.succeeded']);
+    expect(events.json().items.map((e: { type: string }) => e.type)).toEqual([
+      'job.created',
+      'job.started',
+      'job.succeeded',
+    ]);
     expect(events.json().items[0].cursor).toMatch(/^\d+\.\d+$/);
   });
 
@@ -400,7 +451,10 @@ describe('queries', () => {
     const doc = res.json();
     expect(doc.openapi).toBe('3.1.0');
     expect(Object.keys(doc.paths)).toEqual(
-      expect.arrayContaining(['/v1/projects/{projectId}/jobs', '/v1/projects/{projectId}/jobs/{jobId}/retry']),
+      expect.arrayContaining([
+        '/v1/projects/{projectId}/jobs',
+        '/v1/projects/{projectId}/jobs/{jobId}/retry',
+      ]),
     );
     expect(doc.components.schemas.Job).toBeDefined();
   });

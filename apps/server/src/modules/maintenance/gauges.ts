@@ -53,7 +53,12 @@ export async function takeSnapshot(pool: pg.Pool, queues: QueueSet): Promise<Sys
     jobs: { scheduled: r.scheduled, queued: r.queued, running: r.running, retry_wait: r.retry_wait },
     oldestQueuedAgeSeconds: Math.max(0, r.oldest_queued ?? 0),
     outbox: { pending: r.outbox_pending, oldestAgeSeconds: Math.max(0, r.outbox_oldest ?? 0) },
-    workers: { online: r.online, draining: r.draining, activeJobs: r.active_jobs ?? 0, capacity: r.capacity ?? 0 },
+    workers: {
+      online: r.online,
+      draining: r.draining,
+      activeJobs: r.active_jobs ?? 0,
+      capacity: r.capacity ?? 0,
+    },
   };
 }
 

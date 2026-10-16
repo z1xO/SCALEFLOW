@@ -106,7 +106,11 @@ describe('error classification', () => {
       retryable: false,
     });
     expect(classifyError(new RetryableJobError('http_503', 'down'), false).retryable).toBe(true);
-    expect(classifyError(new Error('boom'), false)).toEqual({ code: 'handler_error', message: 'boom', retryable: true });
+    expect(classifyError(new Error('boom'), false)).toEqual({
+      code: 'handler_error',
+      message: 'boom',
+      retryable: true,
+    });
     expect(classifyError(new PermanentJobError('x', 'y'), true).code).toBe('timeout');
     expect(classifyError(new Error('x'.repeat(5000)), false).message.length).toBeLessThan(1100);
   });
@@ -114,7 +118,9 @@ describe('error classification', () => {
 
 describe('async helpers', () => {
   it('withTimeout rejects slow promises', async () => {
-    await expect(withTimeout(new Promise(() => undefined), 20, 'slow op')).rejects.toBeInstanceOf(TimeoutError);
+    await expect(withTimeout(new Promise(() => undefined), 20, 'slow op')).rejects.toBeInstanceOf(
+      TimeoutError,
+    );
     await expect(withTimeout(Promise.resolve(5), 1000, 'fast op')).resolves.toBe(5);
   });
 

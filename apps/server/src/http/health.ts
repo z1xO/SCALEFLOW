@@ -29,5 +29,8 @@ export async function checkDependencies(
     probe(() => pool.query('SELECT 1'), timeoutMs, 'postgres'),
     probe(() => redis.ping(), timeoutMs, 'redis'),
   ]);
-  return { ok: postgres.status === 'ok' && redisStatus.status === 'ok', checks: { postgres, redis: redisStatus } };
+  return {
+    ok: postgres.status === 'ok' && redisStatus.status === 'ok',
+    checks: { postgres, redis: redisStatus },
+  };
 }

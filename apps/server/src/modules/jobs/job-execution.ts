@@ -153,7 +153,11 @@ export class JobExecution {
         const res = await applyFailure(
           client,
           job,
-          { code: 'lease_expired', message: `Worker ${job.locked_by ?? 'unknown'} stopped renewing its lease`, retryable: true },
+          {
+            code: 'lease_expired',
+            message: `Worker ${job.locked_by ?? 'unknown'} stopped renewing its lease`,
+            retryable: true,
+          },
           'lost',
           null,
           this.random,
@@ -186,20 +190,18 @@ export class JobExecution {
       if (rows.length === 0) return rows;
       await appendEvents(
         client,
-        rows.map(
-          (j): NewJobEvent => ({
-            projectId: j.project_id,
-            jobId: j.id,
-            type: 'job.queued',
-            data: {
-              from: j.previous_status,
-              to: 'queued',
-              type: j.type,
-              queue: j.queue,
-              reason: j.previous_status === 'scheduled' ? 'due' : 'retry_due',
-            },
-          }),
-        ),
+        rows.map((j): NewJobEvent => ({
+          projectId: j.project_id,
+          jobId: j.id,
+          type: 'job.queued',
+          data: {
+            from: j.previous_status,
+            to: 'queued',
+            type: j.type,
+            queue: j.queue,
+            reason: j.previous_status === 'scheduled' ? 'due' : 'retry_due',
+          },
+        })),
       );
       await enqueueDispatches(client, rows);
       return rows;

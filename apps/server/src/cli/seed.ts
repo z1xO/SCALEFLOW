@@ -23,17 +23,29 @@ const newKey = process.argv.includes('--new-key');
 
 try {
   await migrate(services.pool, services.logger);
-  const { rows: users } = await services.pool.query<{ id: string }>('SELECT id FROM users WHERE lower(email) = lower($1)', [email]);
+  const { rows: users } = await services.pool.query<{ id: string }>(
+    'SELECT id FROM users WHERE lower(email) = lower($1)',
+    [email],
+  );
   const userId = users[0]?.id ?? (await services.auth.register({ email, password, name: 'Demo User' })).id;
   const actor = { type: 'user' as const, id: userId };
 
   const projects = await services.projects.listForUser(userId);
-  const project = projects.find((p) => p.name === 'Demo project') ?? (await services.projects.create(userId, { name: 'Demo project' }));
+  const project =
+    projects.find((p) => p.name === 'Demo project') ??
+    (await services.projects.create(userId, { name: 'Demo project' }));
 
   const keys = await services.apiKeys.list(project.id);
   let secret: string | null = null;
   if (newKey || !keys.some((k) => k.name === 'seed' && !k.revokedAt)) {
-    secret = (await services.apiKeys.create(project.id, { name: 'seed', scopes: ['jobs:read', 'jobs:write'] }, actor, userId)).secret;
+    secret = (
+      await services.apiKeys.create(
+        project.id,
+        { name: 'seed', scopes: ['jobs:read', 'jobs:write'] },
+        actor,
+        userId,
+      )
+    ).secret;
   }
 
   const schedules = await services.schedules.list(project.id);
@@ -64,10 +76,36 @@ try {
         maxAttempts: 3,
         idempotencyKey: `seed-sleep-${i}`,
       })),
-      { type: 'demo.flaky', queue: 'default', payload: { succeedOnAttempt: 3 }, maxAttempts: 5, idempotencyKey: 'seed-flaky-recovers', backoff: { type: 'exponential' as const, baseDelayMs: 1000, maxDelayMs: 10000 } },
-      { type: 'demo.flaky', queue: 'default', payload: { failureRate: 1, permanent: true }, maxAttempts: 3, idempotencyKey: 'seed-flaky-dead-letter' },
-      { type: 'demo.echo', queue: 'critical', payload: { message: 'priority work' }, maxAttempts: 3, idempotencyKey: 'seed-echo-critical' },
-      { type: 'demo.echo', queue: 'default', payload: { message: 'later' }, delayMs: 120_000, maxAttempts: 3, idempotencyKey: 'seed-delayed' },
+      {
+        type: 'demo.flaky',
+        queue: 'default',
+        payload: { succeedOnAttempt: 3 },
+        maxAttempts: 5,
+        idempotencyKey: 'seed-flaky-recovers',
+        backoff: { type: 'exponential' as const, baseDelayMs: 1000, maxDelayMs: 10000 },
+      },
+      {
+        type: 'demo.flaky',
+        queue: 'default',
+        payload: { failureRate: 1, permanent: true },
+        maxAttempts: 3,
+        idempotencyKey: 'seed-flaky-dead-letter',
+      },
+      {
+        type: 'demo.echo',
+        queue: 'critical',
+        payload: { message: 'priority work' },
+        maxAttempts: 3,
+        idempotencyKey: 'seed-echo-critical',
+      },
+      {
+        type: 'demo.echo',
+        queue: 'default',
+        payload: { message: 'later' },
+        delayMs: 120_000,
+        maxAttempts: 3,
+        idempotencyKey: 'seed-delayed',
+      },
     ],
     { actor, correlationId: 'seed' },
   );
@@ -75,11 +113,19 @@ try {
   console.log('\nScaleFlow seed complete');
   console.log('  dashboard login :', email, '/', password);
   console.log('  project id      :', project.id);
-  console.log('  sample jobs     :', results.filter((r) => r.created).length, 'created,', results.filter((r) => !r.created).length, 'already present');
+  console.log(
+    '  sample jobs     :',
+    results.filter((r) => r.created).length,
+    'created,',
+    results.filter((r) => !r.created).length,
+    'already present',
+  );
   if (secret) {
     console.log('  API key         :', secret, '   <- shown once; store it now');
   } else {
-    console.log('  API key         : a "seed" key already exists (secrets are not stored). Run with --new-key to mint one.');
+    console.log(
+      '  API key         : a "seed" key already exists (secrets are not stored). Run with --new-key to mint one.',
+    );
   }
 } finally {
   await services.close();

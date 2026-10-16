@@ -11,12 +11,7 @@ export const PROJECT_ROLES = ['owner', 'developer', 'viewer'] as const;
 export type ProjectRole = (typeof PROJECT_ROLES)[number];
 
 export type Permission =
-  | 'project:read'
-  | 'project:manage'
-  | 'members:manage'
-  | 'keys:manage'
-  | 'jobs:read'
-  | 'jobs:write';
+  'project:read' | 'project:manage' | 'members:manage' | 'keys:manage' | 'jobs:read' | 'jobs:write';
 
 export type Principal =
   | { kind: 'user'; userId: string; email: string; sessionId: string }
@@ -67,7 +62,11 @@ export class Authorizer {
     private readonly logger: Logger,
   ) {}
 
-  async authorize(principal: Principal | null, projectId: string, permission: Permission): Promise<ProjectAccess> {
+  async authorize(
+    principal: Principal | null,
+    projectId: string,
+    permission: Permission,
+  ): Promise<ProjectAccess> {
     if (!principal) throw new UnauthorizedError();
     if (principal.kind === 'api_key') {
       if (principal.projectId !== projectId) throw new NotFoundError('Project');
@@ -78,7 +77,8 @@ export class Authorizer {
     }
     const role = await this.roleOf(principal.userId, projectId);
     if (!role) throw new NotFoundError('Project');
-    if (!roleAllows(role, permission)) throw new ForbiddenError(`Role '${role}' cannot perform '${permission}'`);
+    if (!roleAllows(role, permission))
+      throw new ForbiddenError(`Role '${role}' cannot perform '${permission}'`);
     return { projectId, role };
   }
 

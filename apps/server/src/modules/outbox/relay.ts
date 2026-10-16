@@ -81,10 +81,14 @@ export class OutboxRelay {
           );
           const now = Date.now();
           this.metrics.outboxPublished.inc(batch.length);
-          for (const r of batch) this.metrics.outboxPublishLatency.observe((now - r.available_at.getTime()) / 1000);
+          for (const r of batch)
+            this.metrics.outboxPublishLatency.observe((now - r.available_at.getTime()) / 1000);
         } catch (err) {
           this.metrics.outboxPublishFailures.inc(batch.length);
-          this.logger.warn({ err, queue: queueName, rows: batch.length }, 'outbox publish failed; will retry');
+          this.logger.warn(
+            { err, queue: queueName, rows: batch.length },
+            'outbox publish failed; will retry',
+          );
           // Exponential backoff per row, capped at 30s; the lease is released so any relay can retry.
           await this.pool.query(
             `UPDATE outbox SET locked_until = NULL, last_error = $2,

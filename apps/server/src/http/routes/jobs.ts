@@ -6,7 +6,15 @@ import { JOB_STATUSES } from '../../domain/job-state.js';
 import { ValidationError } from '../../lib/errors.js';
 import { CreateJobInputSchema } from '../../modules/jobs/job-commands.js';
 import { authorizeProject } from '../auth.js';
-import { AttemptSchema, errorResponses, EventSchema, IdParam, JobIdParams, JobSchema, page } from '../schemas.js';
+import {
+  AttemptSchema,
+  errorResponses,
+  EventSchema,
+  IdParam,
+  JobIdParams,
+  JobSchema,
+  page,
+} from '../schemas.js';
 
 export const COMMIT_LSN_HEADER = 'x-scaleflow-commit-lsn';
 export const MIN_LSN_HEADER = 'x-scaleflow-min-lsn';
@@ -57,7 +65,9 @@ export const jobRoutes =
           summary: 'Registered job types',
           response: {
             200: z.object({
-              items: z.array(z.object({ type: z.string(), description: z.string(), defaultTimeoutMs: z.number() })),
+              items: z.array(
+                z.object({ type: z.string(), description: z.string(), defaultTimeoutMs: z.number() }),
+              ),
               queues: z.array(z.string()),
             }),
             ...errorResponses,
@@ -80,7 +90,11 @@ export const jobRoutes =
           params: IdParam,
           headers: IdempotencyHeaders,
           body: CreateJobInputSchema,
-          response: { 200: z.object({ job: JobSchema }), 201: z.object({ job: JobSchema }), ...errorResponses },
+          response: {
+            200: z.object({ job: JobSchema }),
+            201: z.object({ job: JobSchema }),
+            ...errorResponses,
+          },
         },
       },
       async (request, reply) => {
@@ -138,7 +152,8 @@ export const jobRoutes =
         schema: {
           tags: ['jobs'],
           summary: 'Cancel a scheduled, queued or retry-waiting job',
-          description: 'Running jobs cannot be cancelled (409 job_not_cancellable): their side effects may be in progress.',
+          description:
+            'Running jobs cannot be cancelled (409 job_not_cancellable): their side effects may be in progress.',
           params: JobIdParams,
           response: { 200: z.object({ job: JobSchema }), ...errorResponses },
         },

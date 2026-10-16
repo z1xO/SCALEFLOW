@@ -39,7 +39,8 @@ export const streamRoutes =
         const rawCursor = request.headers['last-event-id'] ?? request.query.since;
         const resumeFrom = parseCursor(rawCursor);
         const invalidCursor = rawCursor !== undefined && resumeFrom === null;
-        const principalKey = principal.kind === 'user' ? `user:${principal.userId}` : `key:${principal.apiKeyId}`;
+        const principalKey =
+          principal.kind === 'user' ? `user:${principal.userId}` : `key:${principal.apiKeyId}`;
         const raw = reply.raw;
         const log = request.log.child({ projectId, stream: true });
 
@@ -80,7 +81,11 @@ export const streamRoutes =
           },
         });
         if (!unsubscribe) {
-          throw new TooManyRequestsError('too_many_streams', 'Too many open event streams for this principal', 5);
+          throw new TooManyRequestsError(
+            'too_many_streams',
+            'Too many open event streams for this principal',
+            5,
+          );
         }
 
         reply.hijack();
@@ -115,7 +120,9 @@ export const streamRoutes =
               for (const e of events) sendEvent(e);
             }
           }
-          write(`id: ${formatCursor(lastSent)}\nevent: ready\ndata: ${JSON.stringify({ cursor: formatCursor(lastSent) })}\n\n`);
+          write(
+            `id: ${formatCursor(lastSent)}\nevent: ready\ndata: ${JSON.stringify({ cursor: formatCursor(lastSent) })}\n\n`,
+          );
           replaying = false;
           for (const e of buffered.splice(0)) sendEvent(e);
         } catch (err) {

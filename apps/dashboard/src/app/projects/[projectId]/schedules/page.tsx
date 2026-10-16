@@ -13,7 +13,11 @@ import { dateTime, relativeTime } from '@/lib/format';
 export default function SchedulesPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const qc = useQueryClient();
-  const schedules = useQuery({ queryKey: ['schedules', projectId], queryFn: () => api.schedules(projectId), refetchInterval: 30_000 });
+  const schedules = useQuery({
+    queryKey: ['schedules', projectId],
+    queryFn: () => api.schedules(projectId),
+    refetchInterval: 30_000,
+  });
   const types = useQuery({ queryKey: ['job-types'], queryFn: api.jobTypes, staleTime: 300_000 });
   const refresh = () => qc.invalidateQueries({ queryKey: ['schedules', projectId] });
 
@@ -41,7 +45,8 @@ export default function SchedulesPage() {
     onError: (e) => setError(e.message),
   });
   const toggle = useMutation({
-    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => api.updateSchedule(projectId, id, { enabled }),
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
+      api.updateSchedule(projectId, id, { enabled }),
     onSuccess: refresh,
     onError: (e) => setError(e.message),
   });
@@ -70,7 +75,10 @@ export default function SchedulesPage() {
 
   return (
     <>
-      <PageHeader title="Schedules" description="Recurring jobs (cron). Each tick creates exactly one job, even with several schedulers running." />
+      <PageHeader
+        title="Schedules"
+        description="Recurring jobs (cron). Each tick creates exactly one job, even with several schedulers running."
+      />
       {error && (
         <div className="mb-4">
           <Notice tone="error">{error}</Notice>
@@ -87,7 +95,10 @@ export default function SchedulesPage() {
           ) : (
             <ul className="divide-y divide-line">
               {schedules.data.items.map((s) => (
-                <li key={s.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <li
+                  key={s.id}
+                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div className="min-w-0">
                     <p className="font-medium">
                       {s.name} {!s.enabled && <span className="text-xs text-muted">(paused)</span>}
@@ -96,11 +107,19 @@ export default function SchedulesPage() {
                       {s.cron} · {s.timezone} · {s.jobType}
                     </p>
                     <p className="text-xs text-muted">
-                      next {s.enabled ? <span title={dateTime(s.nextRunAt)}>{relativeTime(s.nextRunAt)}</span> : '—'}
+                      next{' '}
+                      {s.enabled ? (
+                        <span title={dateTime(s.nextRunAt)}>{relativeTime(s.nextRunAt)}</span>
+                      ) : (
+                        '—'
+                      )}
                       {s.lastJobId && (
                         <>
                           {' · '}
-                          <Link className="text-accent hover:underline" href={`/projects/${projectId}/jobs/${s.lastJobId}`}>
+                          <Link
+                            className="text-accent hover:underline"
+                            href={`/projects/${projectId}/jobs/${s.lastJobId}`}
+                          >
                             last run {relativeTime(s.lastRunAt)}
                           </Link>
                         </>
@@ -108,11 +127,20 @@ export default function SchedulesPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button onClick={() => trigger.mutate(s.id)} busy={trigger.isPending && trigger.variables === s.id}>
+                    <Button
+                      onClick={() => trigger.mutate(s.id)}
+                      busy={trigger.isPending && trigger.variables === s.id}
+                    >
                       Run now
                     </Button>
-                    <Button onClick={() => toggle.mutate({ id: s.id, enabled: !s.enabled })}>{s.enabled ? 'Pause' : 'Resume'}</Button>
-                    <Button variant="danger" onClick={() => remove.mutate(s.id)} aria-label={`Delete schedule ${s.name}`}>
+                    <Button onClick={() => toggle.mutate({ id: s.id, enabled: !s.enabled })}>
+                      {s.enabled ? 'Pause' : 'Resume'}
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => remove.mutate(s.id)}
+                      aria-label={`Delete schedule ${s.name}`}
+                    >
                       Delete
                     </Button>
                   </div>
@@ -123,12 +151,35 @@ export default function SchedulesPage() {
         </Card>
         <Card title="New schedule">
           <form onSubmit={onSubmit} className="flex flex-col gap-3">
-            <Field label="Name">{(id) => <Input id={id} value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />}</Field>
-            <Field label="Cron expression" hint="5 fields (min hour day month weekday); at most once a minute.">
-              {(id) => <Input id={id} className="font-mono" value={cron} onChange={(e) => setCron(e.target.value)} required />}
+            <Field label="Name">
+              {(id) => (
+                <Input
+                  id={id}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  maxLength={100}
+                />
+              )}
+            </Field>
+            <Field
+              label="Cron expression"
+              hint="5 fields (min hour day month weekday); at most once a minute."
+            >
+              {(id) => (
+                <Input
+                  id={id}
+                  className="font-mono"
+                  value={cron}
+                  onChange={(e) => setCron(e.target.value)}
+                  required
+                />
+              )}
             </Field>
             <Field label="Time zone" hint="IANA name, e.g. Europe/Berlin.">
-              {(id) => <Input id={id} value={timezone} onChange={(e) => setTimezone(e.target.value)} required />}
+              {(id) => (
+                <Input id={id} value={timezone} onChange={(e) => setTimezone(e.target.value)} required />
+              )}
             </Field>
             <Field label="Job type">
               {(id) => (
@@ -141,7 +192,11 @@ export default function SchedulesPage() {
                 </Select>
               )}
             </Field>
-            <Field label="Payload (JSON)">{(id) => <Textarea id={id} rows={4} value={payload} onChange={(e) => setPayload(e.target.value)} />}</Field>
+            <Field label="Payload (JSON)">
+              {(id) => (
+                <Textarea id={id} rows={4} value={payload} onChange={(e) => setPayload(e.target.value)} />
+              )}
+            </Field>
             <Button type="submit" variant="primary" busy={create.isPending} disabled={!name.trim()}>
               Create schedule
             </Button>

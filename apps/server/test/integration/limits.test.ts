@@ -1,10 +1,21 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { asKey, createApiKey, createTenant, createTestContext, type TestContext } from '../helpers/context.js';
+import {
+  asKey,
+  createApiKey,
+  createTenant,
+  createTestContext,
+  type TestContext,
+} from '../helpers/context.js';
 
 let ctx: TestContext;
 beforeAll(async () => {
   ctx = await createTestContext({
-    env: { RATE_LIMIT_MAX: '5', RATE_LIMIT_WINDOW_MS: '60000', MAX_ACTIVE_JOBS_PER_PROJECT: '3', MAX_OUTBOX_BACKLOG: '1000' },
+    env: {
+      RATE_LIMIT_MAX: '5',
+      RATE_LIMIT_WINDOW_MS: '60000',
+      MAX_ACTIVE_JOBS_PER_PROJECT: '3',
+      MAX_OUTBOX_BACKLOG: '1000',
+    },
   });
 });
 afterAll(async () => {

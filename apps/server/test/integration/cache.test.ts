@@ -15,7 +15,12 @@ const key = (s: string) => `${ctx.services.config.REDIS_KEY_PREFIX}:test:${s}`;
 
 describe('versioned cache', () => {
   it('closes the cache-aside race: a slow reader cannot overwrite a newer invalidation', async () => {
-    const cache = new VersionedCache<{ version: number; v: string }>(ctx.services.redis, 't', ctx.services.logger, ctx.services.metrics);
+    const cache = new VersionedCache<{ version: number; v: string }>(
+      ctx.services.redis,
+      't',
+      ctx.services.logger,
+      ctx.services.metrics,
+    );
     const k = key('race');
     // Reader loaded version 1 from the database...
     const staleRead = { version: 1, v: 'old' };

@@ -71,7 +71,14 @@ export class VersionedCache<T extends VersionedValue> {
   /** Returns true if the value was stored, false if a newer version (or tombstone) is present. */
   async fill(key: string, value: T, ttlMs: number): Promise<boolean> {
     try {
-      const res = await this.redis.eval(FILL_SCRIPT, 1, key, String(value.version), JSON.stringify(value), ttlMs);
+      const res = await this.redis.eval(
+        FILL_SCRIPT,
+        1,
+        key,
+        String(value.version),
+        JSON.stringify(value),
+        ttlMs,
+      );
       return res === 1;
     } catch (err) {
       this.logger.warn({ err, cache: this.name }, 'cache fill failed');

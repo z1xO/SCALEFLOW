@@ -14,7 +14,10 @@ if (!url) {
 const pool = new pg.Pool({ connectionString: url, max: 1, application_name: 'scaleflow-migrate' });
 try {
   const result = await migrate(pool, logger);
-  logger.info({ applied: result.applied.length, alreadyApplied: result.skipped.length }, 'migrations complete');
+  logger.info(
+    { applied: result.applied.length, alreadyApplied: result.skipped.length },
+    'migrations complete',
+  );
 } catch (err) {
   logger.fatal({ err }, 'migration failed');
   process.exitCode = 1;

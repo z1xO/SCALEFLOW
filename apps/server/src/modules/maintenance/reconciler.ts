@@ -55,13 +55,18 @@ export class DispatchReconciler {
         `SELECT * FROM jobs WHERE id = ANY($1) AND status = 'queued' FOR UPDATE SKIP LOCKED`,
         [missing.map((m) => m.id)],
       );
-      const stillMissing = locked.filter((j) => missing.some((m) => m.id === j.id && m.attempt_count === j.attempt_count));
+      const stillMissing = locked.filter((j) =>
+        missing.some((m) => m.id === j.id && m.attempt_count === j.attempt_count),
+      );
       await enqueueDispatches(client, stillMissing);
       return stillMissing;
     });
     if (redispatched.length > 0) {
       this.metrics.dispatchesReconciled.inc(redispatched.length);
-      this.logger.warn({ count: redispatched.length, jobIds: redispatched.slice(0, 20).map((j) => j.id) }, 're-dispatched queued jobs missing from the queue');
+      this.logger.warn(
+        { count: redispatched.length, jobIds: redispatched.slice(0, 20).map((j) => j.id) },
+        're-dispatched queued jobs missing from the queue',
+      );
     }
     return redispatched.length;
   }

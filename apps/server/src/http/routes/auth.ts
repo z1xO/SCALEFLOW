@@ -59,7 +59,11 @@ export const authRoutes =
     app.post(
       '/v1/auth/logout',
       {
-        schema: { tags: ['auth'], summary: 'Revoke the current session', response: { 204: z.null(), ...errorResponses } },
+        schema: {
+          tags: ['auth'],
+          summary: 'Revoke the current session',
+          response: { 204: z.null(), ...errorResponses },
+        },
       },
       async (request, reply) => {
         const token = request.cookies[SESSION_COOKIE];
@@ -75,7 +79,10 @@ export const authRoutes =
         schema: {
           tags: ['auth'],
           summary: 'Current user and project memberships',
-          response: { 200: z.object({ user: UserSchema, memberships: z.array(MembershipSchema) }), ...errorResponses },
+          response: {
+            200: z.object({ user: UserSchema, memberships: z.array(MembershipSchema) }),
+            ...errorResponses,
+          },
         },
       },
       async (request) => {

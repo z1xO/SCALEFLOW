@@ -8,7 +8,15 @@ import { Button } from './ui';
 const CANCELLABLE = new Set(['scheduled', 'queued', 'retry_wait']);
 
 /** Retry (failed jobs) and Cancel (not yet running) - both real API calls. */
-export function JobActions({ job, compact = false, onError }: { job: Job; compact?: boolean; onError?: (msg: string) => void }) {
+export function JobActions({
+  job,
+  compact = false,
+  onError,
+}: {
+  job: Job;
+  compact?: boolean;
+  onError?: (msg: string) => void;
+}) {
   const qc = useQueryClient();
   const refresh = async () => {
     await Promise.all([
@@ -30,12 +38,23 @@ export function JobActions({ job, compact = false, onError }: { job: Job; compac
   return (
     <div className="flex gap-2">
       {job.status === 'failed' && (
-        <Button className={size} busy={retry.isPending} onClick={() => retry.mutate()} aria-label={`Retry job ${job.id}`}>
+        <Button
+          className={size}
+          busy={retry.isPending}
+          onClick={() => retry.mutate()}
+          aria-label={`Retry job ${job.id}`}
+        >
           Retry
         </Button>
       )}
       {CANCELLABLE.has(job.status) && (
-        <Button className={size} variant="danger" busy={cancel.isPending} onClick={() => cancel.mutate()} aria-label={`Cancel job ${job.id}`}>
+        <Button
+          className={size}
+          variant="danger"
+          busy={cancel.isPending}
+          onClick={() => cancel.mutate()}
+          aria-label={`Cancel job ${job.id}`}
+        >
           Cancel
         </Button>
       )}

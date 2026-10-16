@@ -22,8 +22,15 @@ export default function OverviewPage() {
     queryFn: () => api.metrics(projectId, window),
     refetchInterval: 15_000,
   });
-  const system = useQuery({ queryKey: ['system', 'queues'], queryFn: api.systemQueues, refetchInterval: 10_000 });
-  const history = useQuery({ queryKey: ['events', projectId, 'recent'], queryFn: () => api.projectEvents(projectId, 30) });
+  const system = useQuery({
+    queryKey: ['system', 'queues'],
+    queryFn: api.systemQueues,
+    refetchInterval: 10_000,
+  });
+  const history = useQuery({
+    queryKey: ['events', projectId, 'recent'],
+    queryFn: () => api.projectEvents(projectId, 30),
+  });
   const { recent } = useStream();
 
   // Live events first, then history, de-duplicated by cursor.
@@ -43,11 +50,19 @@ export default function OverviewPage() {
     <>
       <PageHeader
         title="Overview"
-        description={m?.readModelAsOf ? `Read model updated ${relativeTime(m.readModelAsOf)} (eventually consistent, ~1 s behind)` : undefined}
+        description={
+          m?.readModelAsOf
+            ? `Read model updated ${relativeTime(m.readModelAsOf)} (eventually consistent, ~1 s behind)`
+            : undefined
+        }
         actions={
           <label className="flex items-center gap-2 text-sm text-ink-2">
             Window
-            <Select value={window} onChange={(e) => setWindow(e.target.value as MetricWindow)} className="w-auto">
+            <Select
+              value={window}
+              onChange={(e) => setWindow(e.target.value as MetricWindow)}
+              className="w-auto"
+            >
               <option value="15m">Last 15 minutes</option>
               <option value="1h">Last hour</option>
               <option value="6h">Last 6 hours</option>
@@ -65,9 +80,21 @@ export default function OverviewPage() {
               Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-20" />)
             ) : (
               <>
-                <StatTile label="Success rate" value={percent(m.totals.successRate)} sub={`${compact(m.totals.succeeded)} ok · ${compact(m.totals.failed)} failed`} />
-                <StatTile label="Submitted" value={compact(m.totals.submitted)} sub={`${compact(m.totals.retried)} retries scheduled`} />
-                <StatTile label="Active jobs" value={compact(active)} sub={`${m.counts.running} running · ${m.counts.queued} queued`} />
+                <StatTile
+                  label="Success rate"
+                  value={percent(m.totals.successRate)}
+                  sub={`${compact(m.totals.succeeded)} ok · ${compact(m.totals.failed)} failed`}
+                />
+                <StatTile
+                  label="Submitted"
+                  value={compact(m.totals.submitted)}
+                  sub={`${compact(m.totals.retried)} retries scheduled`}
+                />
+                <StatTile
+                  label="Active jobs"
+                  value={compact(active)}
+                  sub={`${m.counts.running} running · ${m.counts.queued} queued`}
+                />
                 <StatTile
                   label="Execution time"
                   value={formatDuration(m.latency.execution.p50Ms)}
@@ -82,10 +109,19 @@ export default function OverviewPage() {
             )}
           </div>
 
-          <Card title="Throughput">{m ? <ThroughputChart series={m.series} /> : <Skeleton className="h-72" />}</Card>
+          <Card title="Throughput">
+            {m ? <ThroughputChart series={m.series} /> : <Skeleton className="h-72" />}
+          </Card>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <Card title="Queue health" actions={<Link className="text-xs text-accent hover:underline" href={`/projects/${projectId}/system`}>Details</Link>}>
+            <Card
+              title="Queue health"
+              actions={
+                <Link className="text-xs text-accent hover:underline" href={`/projects/${projectId}/system`}>
+                  Details
+                </Link>
+              }
+            >
               {system.isPending ? (
                 <LoadingRows rows={3} />
               ) : system.isError ? (
@@ -102,7 +138,9 @@ export default function OverviewPage() {
                   ))}
                   <div>
                     <dt className="text-xs text-muted">Oldest queued job</dt>
-                    <dd className="tabular text-ink">{formatDuration(system.data.oldestQueuedAgeSeconds * 1000)}</dd>
+                    <dd className="tabular text-ink">
+                      {formatDuration(system.data.oldestQueuedAgeSeconds * 1000)}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-muted">Outbox backlog</dt>
@@ -111,7 +149,8 @@ export default function OverviewPage() {
                   <div>
                     <dt className="text-xs text-muted">Workers</dt>
                     <dd className="tabular text-ink">
-                      {system.data.workers.online} online · {system.data.workers.activeJobs}/{system.data.workers.capacity} slots busy
+                      {system.data.workers.online} online · {system.data.workers.activeJobs}/
+                      {system.data.workers.capacity} slots busy
                     </dd>
                   </div>
                 </dl>
@@ -124,7 +163,11 @@ export default function OverviewPage() {
                 <ErrorState error={history.error} onRetry={() => void history.refetch()} />
               ) : (
                 <div className="max-h-96 overflow-auto">
-                  <EventFeed events={feed.slice(0, 40)} projectId={projectId} empty="No events yet. Submit a job to see it flow through." />
+                  <EventFeed
+                    events={feed.slice(0, 40)}
+                    projectId={projectId}
+                    empty="No events yet. Submit a job to see it flow through."
+                  />
                 </div>
               )}
             </Card>

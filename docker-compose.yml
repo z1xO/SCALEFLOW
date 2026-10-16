@@ -52,7 +52,8 @@ services:
   redis:
     image: redis:8-alpine
     # AOF persistence + noeviction: BullMQ requires that queue keys are never evicted.
-    command: ['redis-server', '--appendonly', 'yes', '--appendfsync', 'everysec', '--maxmemory-policy', 'noeviction']
+    command:
+      ['redis-server', '--appendonly', 'yes', '--appendfsync', 'everysec', '--maxmemory-policy', 'noeviction']
     ports: ['6379:6379']
     volumes: [redisdata:/data]
     healthcheck:

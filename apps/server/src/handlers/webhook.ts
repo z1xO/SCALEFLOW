@@ -51,7 +51,9 @@ export interface WebhookOptions {
  * the at-least-once deliveries, and classifies failures:
  *   2xx -> success; 408/429/5xx/network/timeout -> retry; other 4xx -> permanent failure.
  */
-export function createWebhookHandler(opts: WebhookOptions): JobHandler<WebhookPayload> & { close(): Promise<void> } {
+export function createWebhookHandler(
+  opts: WebhookOptions,
+): JobHandler<WebhookPayload> & { close(): Promise<void> } {
   const dispatcher: Dispatcher = new Agent({
     connections: 64,
     keepAliveTimeout: 10_000,
@@ -71,7 +73,10 @@ export function createWebhookHandler(opts: WebhookOptions): JobHandler<WebhookPa
       const host = url.hostname.replace(/^\[|\]$/g, '');
       // IP literals bypass DNS lookup, so check them directly.
       if (!opts.allowPrivateNetworks && isIP(host) && isBlockedAddress(host)) {
-        throw new PermanentJobError('destination_blocked', `Destination ${host} is a private or reserved address`);
+        throw new PermanentJobError(
+          'destination_blocked',
+          `Destination ${host} is a private or reserved address`,
+        );
       }
       const body = JSON.stringify(payload.body ?? null);
       const timestamp = Math.floor(Date.now() / 1000).toString();

@@ -15,7 +15,11 @@ import { checkDependencies } from './health.js';
  * Minimal HTTP server for non-API processes (worker, relay, scheduler): Prometheus scraping plus
  * liveness/readiness probes for the orchestrator.
  */
-export function startOpsServer(services: Services, port: number, isShuttingDown: () => boolean): Promise<Server> {
+export function startOpsServer(
+  services: Services,
+  port: number,
+  isShuttingDown: () => boolean,
+): Promise<Server> {
   const { metrics, config, logger } = services;
   const server = createServer((req, res) => {
     const send = (status: number, body: string, type = 'application/json'): void => {

@@ -41,7 +41,12 @@ export class ApiError extends Error {
  */
 let minLsn: string | null = null;
 
-async function request<T>(method: string, path: string, body?: unknown, init?: { idempotencyKey?: string }): Promise<T> {
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  init?: { idempotencyKey?: string },
+): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers['content-type'] = 'application/json';
   if (init?.idempotencyKey) headers['idempotency-key'] = init.idempotencyKey;
@@ -64,7 +69,13 @@ async function request<T>(method: string, path: string, body?: unknown, init?: {
   const data: unknown = text ? JSON.parse(text) : null;
   if (!res.ok) {
     const p = (data ?? {}) as { code?: string; detail?: string; requestId?: string; errors?: unknown };
-    throw new ApiError(res.status, p.code ?? 'error', p.detail ?? res.statusText, p.requestId ?? null, p.errors);
+    throw new ApiError(
+      res.status,
+      p.code ?? 'error',
+      p.detail ?? res.statusText,
+      p.requestId ?? null,
+      p.errors,
+    );
   }
   return data as T;
 }
@@ -109,17 +120,27 @@ export const api = {
   members: (id: string) => request<{ items: Member[] }>('GET', `/v1/projects/${id}/members`),
   addMember: (id: string, email: string, role: Role) =>
     request<{ member: Member }>('POST', `/v1/projects/${id}/members`, { email, role }),
-  removeMember: (id: string, userId: string) => request<void>('DELETE', `/v1/projects/${id}/members/${userId}`),
+  removeMember: (id: string, userId: string) =>
+    request<void>('DELETE', `/v1/projects/${id}/members/${userId}`),
 
   // api keys
   apiKeys: (id: string) => request<{ items: ApiKey[] }>('GET', `/v1/projects/${id}/api-keys`),
   createApiKey: (id: string, name: string, scopes: ApiKey['scopes'], expiresInDays?: number) =>
-    request<{ apiKey: ApiKey; secret: string }>('POST', `/v1/projects/${id}/api-keys`, { name, scopes, expiresInDays }),
-  rotateApiKey: (id: string, keyId: string, gracePeriodSeconds: number) =>
-    request<{ apiKey: ApiKey; secret: string; previous: ApiKey }>('POST', `/v1/projects/${id}/api-keys/${keyId}/rotate`, {
-      gracePeriodSeconds,
+    request<{ apiKey: ApiKey; secret: string }>('POST', `/v1/projects/${id}/api-keys`, {
+      name,
+      scopes,
+      expiresInDays,
     }),
-  revokeApiKey: (id: string, keyId: string) => request<{ apiKey: ApiKey }>('DELETE', `/v1/projects/${id}/api-keys/${keyId}`),
+  rotateApiKey: (id: string, keyId: string, gracePeriodSeconds: number) =>
+    request<{ apiKey: ApiKey; secret: string; previous: ApiKey }>(
+      'POST',
+      `/v1/projects/${id}/api-keys/${keyId}/rotate`,
+      {
+        gracePeriodSeconds,
+      },
+    ),
+  revokeApiKey: (id: string, keyId: string) =>
+    request<{ apiKey: ApiKey }>('DELETE', `/v1/projects/${id}/api-keys/${keyId}`),
 
   // jobs
   jobTypes: () => request<{ items: JobType[]; queues: string[] }>('GET', '/v1/job-types'),
@@ -129,24 +150,37 @@ export const api = {
       `/v1/projects/${id}/jobs${qs({ status: f.status?.join(','), type: f.type, queue: f.queue, cursor, limit })}`,
     ),
   job: (id: string, jobId: string) => request<{ job: Job }>('GET', `/v1/projects/${id}/jobs/${jobId}`),
-  attempts: (id: string, jobId: string) => request<{ items: Attempt[] }>('GET', `/v1/projects/${id}/jobs/${jobId}/attempts`),
-  jobEvents: (id: string, jobId: string) => request<{ items: JobEvent[] }>('GET', `/v1/projects/${id}/jobs/${jobId}/events`),
-  projectEvents: (id: string, limit = 30) => request<Page<JobEvent>>('GET', `/v1/projects/${id}/events${qs({ limit })}`),
+  attempts: (id: string, jobId: string) =>
+    request<{ items: Attempt[] }>('GET', `/v1/projects/${id}/jobs/${jobId}/attempts`),
+  jobEvents: (id: string, jobId: string) =>
+    request<{ items: JobEvent[] }>('GET', `/v1/projects/${id}/jobs/${jobId}/events`),
+  projectEvents: (id: string, limit = 30) =>
+    request<Page<JobEvent>>('GET', `/v1/projects/${id}/events${qs({ limit })}`),
   createJob: (id: string, body: CreateJobBody, idempotencyKey?: string) =>
     request<{ job: Job }>('POST', `/v1/projects/${id}/jobs`, body, { idempotencyKey }),
-  cancelJob: (id: string, jobId: string) => request<{ job: Job }>('POST', `/v1/projects/${id}/jobs/${jobId}/cancel`),
-  retryJob: (id: string, jobId: string) => request<{ job: Job }>('POST', `/v1/projects/${id}/jobs/${jobId}/retry`),
+  cancelJob: (id: string, jobId: string) =>
+    request<{ job: Job }>('POST', `/v1/projects/${id}/jobs/${jobId}/cancel`),
+  retryJob: (id: string, jobId: string) =>
+    request<{ job: Job }>('POST', `/v1/projects/${id}/jobs/${jobId}/retry`),
 
   // schedules
   schedules: (id: string) => request<{ items: Schedule[] }>('GET', `/v1/projects/${id}/schedules`),
   createSchedule: (
     id: string,
-    body: { name: string; cron: string; timezone: string; jobType: string; queue: string; payload: Record<string, unknown> },
+    body: {
+      name: string;
+      cron: string;
+      timezone: string;
+      jobType: string;
+      queue: string;
+      payload: Record<string, unknown>;
+    },
   ) => request<{ schedule: Schedule }>('POST', `/v1/projects/${id}/schedules`, body),
   updateSchedule: (id: string, sid: string, body: { enabled?: boolean }) =>
     request<{ schedule: Schedule }>('PATCH', `/v1/projects/${id}/schedules/${sid}`, body),
   deleteSchedule: (id: string, sid: string) => request<void>('DELETE', `/v1/projects/${id}/schedules/${sid}`),
-  triggerSchedule: (id: string, sid: string) => request<{ job: Job }>('POST', `/v1/projects/${id}/schedules/${sid}/trigger`),
+  triggerSchedule: (id: string, sid: string) =>
+    request<{ job: Job }>('POST', `/v1/projects/${id}/schedules/${sid}/trigger`),
 
   // metrics & system
   metrics: (id: string, window: MetricWindow) =>

@@ -1,17 +1,13 @@
 import { z } from 'zod';
 
-const bool = z
-  .enum(['true', 'false', '1', '0'])
-  .transform((v) => v === 'true' || v === '1');
+const bool = z.enum(['true', 'false', '1', '0']).transform((v) => v === 'true' || v === '1');
 
-const csv = z
-  .string()
-  .transform((v) =>
-    v
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0),
-  );
+const csv = z.string().transform((v) =>
+  v
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0),
+);
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -40,7 +36,12 @@ const EnvSchema = z.object({
   PUBLIC_API_URL: z.url().default('http://localhost:4000'),
 
   COOKIE_SECURE: bool.default(false),
-  SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(24 * 90).default(24 * 7),
+  SESSION_TTL_HOURS: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(24 * 90)
+    .default(24 * 7),
   ALLOW_REGISTRATION: bool.default(true),
   /** log2(N) for scrypt. 17 follows OWASP guidance; tests lower it for speed. */
   PASSWORD_SCRYPT_LOG_N: z.coerce.number().int().min(10).max(20).default(17),
@@ -54,7 +55,11 @@ const EnvSchema = z.object({
   MAX_ACTIVE_JOBS_PER_PROJECT: z.coerce.number().int().min(1).default(100_000),
   /** Backpressure: reject submissions when the outbox backlog exceeds this many rows. */
   MAX_OUTBOX_BACKLOG: z.coerce.number().int().min(1).default(50_000),
-  MAX_PAYLOAD_BYTES: z.coerce.number().int().min(256).default(64 * 1024),
+  MAX_PAYLOAD_BYTES: z.coerce
+    .number()
+    .int()
+    .min(256)
+    .default(64 * 1024),
 
   QUEUES: csv.default(['default', 'critical', 'bulk']),
   WORKER_QUEUES: csv.default(['default', 'critical', 'bulk']),

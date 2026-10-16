@@ -25,7 +25,8 @@ export function parseCursor(raw: string | undefined | null): EventCursor | null 
 
 // NB: ORDER BY must use the qualified columns (e.tx_id, e.id). Unqualified names would resolve to the
 // ::text output aliases and sort lexically ('10' < '9'), silently breaking the cursor.
-const COLUMNS = 'e.id::text AS id, e.tx_id::text AS tx_id, e.project_id, e.job_id, e.type, e.data, e.created_at';
+const COLUMNS =
+  'e.id::text AS id, e.tx_id::text AS tx_id, e.project_id, e.job_id, e.type, e.data, e.created_at';
 
 /**
  * Events after `after`, in commit order, restricted to transactions older than the oldest one

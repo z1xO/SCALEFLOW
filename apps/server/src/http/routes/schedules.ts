@@ -79,7 +79,9 @@ export const scheduleRoutes =
       },
       async (request) => {
         await authorizeProject(services, request, request.params.projectId, 'jobs:read');
-        return { schedule: await services.schedules.get(request.params.projectId, request.params.scheduleId) };
+        return {
+          schedule: await services.schedules.get(request.params.projectId, request.params.scheduleId),
+        };
       },
     );
 
@@ -110,7 +112,11 @@ export const scheduleRoutes =
     app.delete(
       '/v1/projects/:projectId/schedules/:scheduleId',
       {
-        schema: { tags: ['schedules'], params: ScheduleParams, response: { 204: z.null(), ...errorResponses } },
+        schema: {
+          tags: ['schedules'],
+          params: ScheduleParams,
+          response: { 204: z.null(), ...errorResponses },
+        },
       },
       async (request, reply) => {
         const { actor } = await authorizeProject(services, request, request.params.projectId, 'jobs:write');
@@ -131,7 +137,11 @@ export const scheduleRoutes =
       },
       async (request, reply) => {
         await authorizeProject(services, request, request.params.projectId, 'jobs:write');
-        const job = await services.schedules.trigger(request.params.projectId, request.params.scheduleId, request.id);
+        const job = await services.schedules.trigger(
+          request.params.projectId,
+          request.params.scheduleId,
+          request.id,
+        );
         return reply.status(201).send({ job });
       },
     );

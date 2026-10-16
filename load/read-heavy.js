@@ -35,7 +35,10 @@ export function setup() {
   for (let i = 0; i < JOBS; i += 100) {
     const res = submitBatch(
       t,
-      Array.from({ length: Math.min(100, JOBS - i) }, (_, j) => ({ type: 'demo.echo', payload: { i: i + j } })),
+      Array.from({ length: Math.min(100, JOBS - i) }, (_, j) => ({
+        type: 'demo.echo',
+        payload: { i: i + j },
+      })),
     );
     for (const item of res.json('items')) ids.push(item.job.id);
   }

@@ -59,7 +59,9 @@ export function ProjectStreamProvider({ projectId, children }: { projectId: stri
     };
 
     const connect = () => {
-      const url = cursorRef.current ? `${streamUrl(projectId)}?since=${encodeURIComponent(cursorRef.current)}` : streamUrl(projectId);
+      const url = cursorRef.current
+        ? `${streamUrl(projectId)}?since=${encodeURIComponent(cursorRef.current)}`
+        : streamUrl(projectId);
       es = new EventSource(url, { withCredentials: true });
       es.addEventListener('ready', (e) => {
         const data = JSON.parse((e as MessageEvent<string>).data) as { cursor: string };

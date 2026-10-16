@@ -12,7 +12,9 @@ let b: Awaited<ReturnType<typeof createTenant>>;
 const clients: SseClient[] = [];
 
 beforeAll(async () => {
-  ctx = await createTestContext({ env: { SSE_POLL_MS: '25', SSE_HEARTBEAT_MS: '1000', SSE_REPLAY_MAX_EVENTS: '50' } });
+  ctx = await createTestContext({
+    env: { SSE_POLL_MS: '25', SSE_HEARTBEAT_MS: '1000', SSE_REPLAY_MAX_EVENTS: '50' },
+  });
   await ctx.app.listen({ port: 0, host: '127.0.0.1' });
   const addr = ctx.app.server.address();
   if (!addr || typeof addr === 'string') throw new Error('no address');
@@ -31,7 +33,10 @@ async function connect(projectId: string, headers: Record<string, string>): Prom
   return c;
 }
 
-async function submit(t: typeof a, body: Record<string, unknown> = { type: 'demo.echo', payload: {} }): Promise<string> {
+async function submit(
+  t: typeof a,
+  body: Record<string, unknown> = { type: 'demo.echo', payload: {} },
+): Promise<string> {
   const res = await ctx.app.inject({
     method: 'POST',
     url: `/v1/projects/${t.projectId}/jobs`,
@@ -43,11 +48,24 @@ async function submit(t: typeof a, body: Record<string, unknown> = { type: 'demo
 }
 
 function run(jobId: string, projectId: string): Promise<string> {
-  const ex = new JobExecutor(ctx.services.jobExecution, ctx.services.handlers, ctx.services.logger, ctx.services.metrics, {
-    workerId: 'rt-worker',
-    leaseMs: 5_000,
+  const ex = new JobExecutor(
+    ctx.services.jobExecution,
+    ctx.services.handlers,
+    ctx.services.logger,
+    ctx.services.metrics,
+    {
+      workerId: 'rt-worker',
+      leaseMs: 5_000,
+    },
+  );
+  return ex.process({
+    jobId,
+    attempt: 1,
+    projectId,
+    queue: 'default',
+    type: 'demo.echo',
+    correlationId: null,
   });
-  return ex.process({ jobId, attempt: 1, projectId, queue: 'default', type: 'demo.echo', correlationId: null });
 }
 
 describe('server-sent events', () => {
@@ -65,16 +83,24 @@ describe('server-sent events', () => {
     const id = await submit(a);
     expect(await run(id, a.projectId)).toBe('succeeded');
     await stream.waitFor((c) => c.jobEvents.filter((e) => e.jobId === id).length === 3);
-    const mine = stream.messages.filter((m) => m.event === 'job' && (m.data as { jobId: string }).jobId === id);
-    expect(mine.map((m) => (m.data as { type: string }).type)).toEqual(['job.created', 'job.started', 'job.succeeded']);
+    const mine = stream.messages.filter(
+      (m) => m.event === 'job' && (m.data as { jobId: string }).jobId === id,
+    );
+    expect(mine.map((m) => (m.data as { type: string }).type)).toEqual([
+      'job.created',
+      'job.started',
+      'job.succeeded',
+    ]);
     for (const m of mine) expect(m.id).toMatch(/^\d+\.\d+$/);
     await stream.close();
   });
 
-  it('never leaks another project\'s events', async () => {
+  it("never leaks another project's events", async () => {
     const streamB = await connect(b.projectId, asKey(b.apiKey));
     const streamA = await connect(a.projectId, asKey(a.apiKey));
-    await Promise.all([streamA, streamB].map((s) => s.waitFor((c) => c.messages.some((m) => m.event === 'ready'))));
+    await Promise.all(
+      [streamA, streamB].map((s) => s.waitFor((c) => c.messages.some((m) => m.event === 'ready'))),
+    );
     const idA = await submit(a);
     const idB = await submit(b);
     await streamA.waitFor((c) => c.jobEvents.some((e) => e.jobId === idA));
@@ -106,7 +132,11 @@ describe('server-sent events', () => {
     const replayed = second.jobEvents;
     expect(replayed.filter((e) => e.jobId === before)).toHaveLength(0); // already seen: not repeated
     for (const id of missed) {
-      expect(replayed.filter((e) => e.jobId === id).map((e) => e.type)).toEqual(['job.created', 'job.started', 'job.succeeded']);
+      expect(replayed.filter((e) => e.jobId === id).map((e) => e.type)).toEqual([
+        'job.created',
+        'job.started',
+        'job.succeeded',
+      ]);
     }
     // Live delivery continues on the resumed stream.
     const after = await submit(a);
@@ -122,7 +152,10 @@ describe('server-sent events', () => {
     const cursor = first.lastEventId!;
     await first.close();
     const id = await submit(a);
-    const second = await SseClient.connect(`${base}/v1/projects/${a.projectId}/stream?since=${cursor}`, asKey(a.apiKey));
+    const second = await SseClient.connect(
+      `${base}/v1/projects/${a.projectId}/stream?since=${cursor}`,
+      asKey(a.apiKey),
+    );
     clients.push(second);
     await second.waitFor((c) => c.jobEvents.some((e) => e.jobId === id));
     await second.close();
@@ -142,7 +175,9 @@ describe('server-sent events', () => {
     expect(res.statusCode).toBe(201);
     // Wait until the batch is below the (cluster-wide) commit watermark, i.e. replayable.
     const from = parseCursor(cursor)!;
-    await waitFor(async () => (await readCommittedEvents(ctx.services.pool, from, 100, [a.projectId])).length > 50);
+    await waitFor(
+      async () => (await readCommittedEvents(ctx.services.pool, from, 100, [a.projectId])).length > 50,
+    );
     const behind = await connect(a.projectId, { ...asKey(a.apiKey), 'last-event-id': cursor });
     await behind.waitFor((c) => c.messages.some((m) => m.event === 'ready'));
     expect(behind.messages.find((m) => m.event === 'reset')?.data).toEqual({ reason: 'too_far_behind' });
@@ -159,8 +194,14 @@ describe('server-sent events', () => {
 
   it('sends heartbeats and periodic system snapshots', async () => {
     const stream = await connect(a.projectId, asKey(a.apiKey));
-    await stream.waitFor((c) => c.comments.includes('ping') && c.messages.some((m) => m.event === 'system'), 12_000);
-    const sys = stream.messages.find((m) => m.event === 'system')?.data as { queues: object; workers: object };
+    await stream.waitFor(
+      (c) => c.comments.includes('ping') && c.messages.some((m) => m.event === 'system'),
+      12_000,
+    );
+    const sys = stream.messages.find((m) => m.event === 'system')?.data as {
+      queues: object;
+      workers: object;
+    };
     expect(sys).toHaveProperty('queues');
     expect(sys).toHaveProperty('workers');
     await stream.close();
@@ -173,7 +214,10 @@ describe('server-sent events', () => {
       const addr = other.app.server.address();
       if (!addr || typeof addr === 'string') throw new Error('no address');
       const t = await createTenant(other.services);
-      const stream = await SseClient.connect(`http://127.0.0.1:${addr.port}/v1/projects/${t.projectId}/stream`, asKey(t.apiKey));
+      const stream = await SseClient.connect(
+        `http://127.0.0.1:${addr.port}/v1/projects/${t.projectId}/stream`,
+        asKey(t.apiKey),
+      );
       await stream.waitFor((c) => c.messages.some((m) => m.event === 'ready'));
       const started = Date.now();
       await other.app.close();

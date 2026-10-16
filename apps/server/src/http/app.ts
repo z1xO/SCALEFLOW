@@ -63,10 +63,18 @@ export async function buildApp(services: Services, opts: AppOptions = {}): Promi
     // scaleflow_realtime_connections instead.
     if (route === '/v1/projects/:projectId/stream' && reply.statusCode === 200) return;
     const seconds = reply.elapsedTime / 1000;
-    metrics.httpRequestDuration.observe({ method: request.method, route, status_code: String(reply.statusCode) }, seconds);
+    metrics.httpRequestDuration.observe(
+      { method: request.method, route, status_code: String(reply.statusCode) },
+      seconds,
+    );
     const level = reply.statusCode >= 500 ? 'error' : reply.statusCode >= 400 ? 'info' : 'debug';
     request.log[level](
-      { method: request.method, route, statusCode: reply.statusCode, durationMs: Math.round(reply.elapsedTime) },
+      {
+        method: request.method,
+        route,
+        statusCode: reply.statusCode,
+        durationMs: Math.round(reply.elapsedTime),
+      },
       'request completed',
     );
   });
@@ -75,8 +83,21 @@ export async function buildApp(services: Services, opts: AppOptions = {}): Promi
     origin: config.CORS_ORIGINS,
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['authorization', 'content-type', 'idempotency-key', 'x-request-id', 'x-scaleflow-min-lsn', 'last-event-id'],
-    exposedHeaders: ['x-request-id', 'x-scaleflow-commit-lsn', 'idempotent-replayed', 'retry-after', 'location'],
+    allowedHeaders: [
+      'authorization',
+      'content-type',
+      'idempotency-key',
+      'x-request-id',
+      'x-scaleflow-min-lsn',
+      'last-event-id',
+    ],
+    exposedHeaders: [
+      'x-request-id',
+      'x-scaleflow-commit-lsn',
+      'idempotent-replayed',
+      'retry-after',
+      'location',
+    ],
     maxAge: 600,
   });
   await app.register(cookie);
@@ -137,7 +158,9 @@ export async function buildApp(services: Services, opts: AppOptions = {}): Promi
   app.get('/readyz', { schema: { hide: true }, config: { rateLimit: false } }, async (_request, reply) => {
     if (opts.isShuttingDown?.()) return reply.status(503).send({ status: 'shutting_down' });
     const result = await checkDependencies(services.pool, services.redis);
-    return reply.status(result.ok ? 200 : 503).send({ status: result.ok ? 'ready' : 'not_ready', checks: result.checks });
+    return reply
+      .status(result.ok ? 200 : 503)
+      .send({ status: result.ok ? 'ready' : 'not_ready', checks: result.checks });
   });
   app.get('/metrics', { schema: { hide: true }, config: { rateLimit: false } }, async (request, reply) => {
     if (config.METRICS_TOKEN && request.headers.authorization !== `Bearer ${config.METRICS_TOKEN}`) {
@@ -156,8 +179,10 @@ export async function buildApp(services: Services, opts: AppOptions = {}): Promi
   const hub = new RealtimeHub(
     services.pool,
     () =>
-      services.loader.get(`${config.REDIS_KEY_PREFIX}:system:queues`, { freshMs: 2_000, staleMs: 10_000 }, () =>
-        takeSnapshot(services.pool, services.queues),
+      services.loader.get(
+        `${config.REDIS_KEY_PREFIX}:system:queues`,
+        { freshMs: 2_000, staleMs: 10_000 },
+        () => takeSnapshot(services.pool, services.queues),
       ),
     services.logger,
     metrics,

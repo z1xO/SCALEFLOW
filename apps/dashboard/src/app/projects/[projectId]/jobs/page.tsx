@@ -30,7 +30,11 @@ function JobsTable() {
   };
 
   const types = useQuery({ queryKey: ['job-types'], queryFn: api.jobTypes, staleTime: 300_000 });
-  const filters = { status: status ? [status] : undefined, type: type || undefined, queue: queue || undefined };
+  const filters = {
+    status: status ? [status] : undefined,
+    type: type || undefined,
+    queue: queue || undefined,
+  };
   const jobs = useInfiniteQuery({
     queryKey: ['jobs', projectId, filters],
     queryFn: ({ pageParam }) => api.jobs(projectId, filters, pageParam),
@@ -45,7 +49,10 @@ function JobsTable() {
         title="Jobs"
         description="Newest first. Updates live as workers pick jobs up. The “Failed” filter is the dead-letter queue."
         actions={
-          <Link href={`/projects/${projectId}/jobs/new`} className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-ink">
+          <Link
+            href={`/projects/${projectId}/jobs/new`}
+            className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-ink"
+          >
             Submit job
           </Link>
         }
@@ -98,7 +105,10 @@ function JobsTable() {
         <EmptyState
           title={status || type || queue ? 'No jobs match these filters' : 'No jobs yet'}
           action={
-            <Link href={`/projects/${projectId}/jobs/new`} className="text-sm font-medium text-accent hover:underline">
+            <Link
+              href={`/projects/${projectId}/jobs/new`}
+              className="text-sm font-medium text-accent hover:underline"
+            >
               Submit your first job
             </Link>
           }
@@ -129,7 +139,10 @@ function JobsTable() {
                     <StatusBadge status={j.status} />
                   </td>
                   <td className="px-3 py-2">
-                    <Link href={`/projects/${projectId}/jobs/${j.id}`} className="text-accent hover:underline">
+                    <Link
+                      href={`/projects/${projectId}/jobs/${j.id}`}
+                      className="text-accent hover:underline"
+                    >
                       {j.type}
                     </Link>
                     <div className="font-mono text-xs text-muted">…{shortId(j.id)}</div>
@@ -138,7 +151,10 @@ function JobsTable() {
                   <td className="tabular px-3 py-2 text-right text-ink-2">
                     {j.runAttempts}/{j.maxAttempts}
                   </td>
-                  <td className="max-w-[16rem] truncate px-3 py-2 font-mono text-xs text-ink-2" title={j.lastError?.message}>
+                  <td
+                    className="max-w-[16rem] truncate px-3 py-2 font-mono text-xs text-ink-2"
+                    title={j.lastError?.message}
+                  >
                     {j.lastError?.code ?? ''}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-ink-2">

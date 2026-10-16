@@ -10,7 +10,12 @@ import { useStream, type StreamStatus } from '@/lib/stream';
 import { Button, Select } from './ui';
 
 const CONNECTION: Record<StreamStatus, { label: string; glyph: string; color: string; hint: string }> = {
-  connecting: { label: 'Connecting', glyph: '◌', color: 'var(--ink-muted)', hint: 'Opening the live event stream' },
+  connecting: {
+    label: 'Connecting',
+    glyph: '◌',
+    color: 'var(--ink-muted)',
+    hint: 'Opening the live event stream',
+  },
   live: { label: 'Live', glyph: '●', color: 'var(--good)', hint: 'Receiving real-time updates' },
   reconnecting: {
     label: 'Reconnecting',
@@ -18,14 +23,24 @@ const CONNECTION: Record<StreamStatus, { label: string; glyph: string; color: st
     color: 'var(--warning)',
     hint: 'Connection lost; resuming from the last received event',
   },
-  offline: { label: 'Offline', glyph: '○', color: 'var(--critical)', hint: 'Live updates paused; data may be stale' },
+  offline: {
+    label: 'Offline',
+    glyph: '○',
+    color: 'var(--critical)',
+    hint: 'Live updates paused; data may be stale',
+  },
 };
 
 export function ConnectionIndicator() {
   const { status } = useStream();
   const c = CONNECTION[status];
   return (
-    <span title={c.hint} data-testid="connection-status" data-state={status} className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-2">
+    <span
+      title={c.hint}
+      data-testid="connection-status"
+      data-state={status}
+      className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-2"
+    >
       <span aria-hidden style={{ color: c.color }}>
         {c.glyph}
       </span>
@@ -108,7 +123,12 @@ export function ProjectShell({ projectId, children }: { projectId: string; child
           <span className="truncate text-xs text-muted" title={me.data?.user.email}>
             {me.data?.user.email}
           </span>
-          <Button variant="ghost" className="justify-start" busy={logout.isPending} onClick={() => logout.mutate()}>
+          <Button
+            variant="ghost"
+            className="justify-start"
+            busy={logout.isPending}
+            onClick={() => logout.mutate()}
+          >
             Log out
           </Button>
         </div>
@@ -118,7 +138,15 @@ export function ProjectShell({ projectId, children }: { projectId: string; child
   );
 }
 
-export function PageHeader({ title, description, actions }: { title: string; description?: ReactNode; actions?: ReactNode }) {
+export function PageHeader({
+  title,
+  description,
+  actions,
+}: {
+  title: string;
+  description?: ReactNode;
+  actions?: ReactNode;
+}) {
   return (
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>

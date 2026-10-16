@@ -80,8 +80,10 @@ export class MetricsQueries {
   ) {}
 
   get(projectId: string, window: MetricWindow): Promise<ProjectMetrics> {
-    return this.loader.get(`${this.prefix}:metrics:${projectId}:${window}`, { freshMs: 5_000, staleMs: 60_000 }, () =>
-      this.compute(projectId, window),
+    return this.loader.get(
+      `${this.prefix}:metrics:${projectId}:${window}`,
+      { freshMs: 5_000, staleMs: 60_000 },
+      () => this.compute(projectId, window),
     );
   }
 
@@ -127,7 +129,9 @@ export class MetricsQueries {
          GROUP BY 1 ORDER BY 1`,
         [projectId, since, stepMinutes],
       ),
-      pool.query<{ updated_at: Date }>("SELECT updated_at FROM projection_checkpoints WHERE name = 'job_read_model'"),
+      pool.query<{ updated_at: Date }>(
+        "SELECT updated_at FROM projection_checkpoints WHERE name = 'job_read_model'",
+      ),
     ]);
 
     const countMap = Object.fromEntries(JOB_STATUSES.map((s) => [s, 0])) as Record<JobStatus, number>;

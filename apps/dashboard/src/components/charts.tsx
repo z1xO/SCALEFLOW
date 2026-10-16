@@ -60,7 +60,11 @@ export function ThroughputChart({ series }: { series: ProjectMetrics['series'] }
           </table>
         </div>
       ) : (
-        <div className="h-72 w-full" role="img" aria-label="Jobs submitted, succeeded, failed and retried per interval">
+        <div
+          className="h-72 w-full"
+          role="img"
+          aria-label="Jobs submitted, succeeded, failed and retried per interval"
+        >
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={series} margin={{ top: 8, right: 12, bottom: 0, left: -12 }}>
               <CartesianGrid vertical={false} stroke="var(--grid)" />
@@ -72,15 +76,34 @@ export function ThroughputChart({ series }: { series: ProjectMetrics['series'] }
                 tickLine={false}
                 minTickGap={40}
               />
-              <YAxis allowDecimals={false} stroke="var(--axis)" tick={{ fill: 'var(--ink-muted)', fontSize: 11 }} tickLine={false} axisLine={false} />
+              <YAxis
+                allowDecimals={false}
+                stroke="var(--axis)"
+                tick={{ fill: 'var(--ink-muted)', fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+              />
               <Tooltip
                 labelFormatter={(v) => timeLabel(String(v))}
-                contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--ink)', fontSize: 12 }}
+                contentStyle={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  color: 'var(--ink)',
+                  fontSize: 12,
+                }}
                 itemStyle={{ color: 'var(--ink)' }}
                 cursor={{ stroke: 'var(--axis)', strokeWidth: 1 }}
               />
               {/* itemSorter={null}: keep the fixed series order (Recharts sorts alphabetically by default). */}
-              <Legend verticalAlign="top" align="left" height={28} iconType="plainline" itemSorter={null} wrapperStyle={{ fontSize: 12, color: 'var(--ink-2)' }} />
+              <Legend
+                verticalAlign="top"
+                align="left"
+                height={28}
+                iconType="plainline"
+                itemSorter={null}
+                wrapperStyle={{ fontSize: 12, color: 'var(--ink-2)' }}
+              />
               {SERIES.map((s) => (
                 <Line
                   key={s.key}

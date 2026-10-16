@@ -59,7 +59,8 @@ export class JobExecutor {
       return 'skipped';
     }
     const job = claimed.job;
-    if (claimed.queueWaitMs !== null) this.metrics.jobQueueWait.observe({ queue }, claimed.queueWaitMs / 1000);
+    if (claimed.queueWaitMs !== null)
+      this.metrics.jobQueueWait.observe({ queue }, claimed.queueWaitMs / 1000);
 
     const controller = new AbortController();
     this.active.set(jobId, controller);
@@ -73,19 +74,22 @@ export class JobExecutor {
       controller.abort(new ExecutionAborted('timeout'));
     }, job.timeout_ms);
     // Renew the lease well before it expires; losing it means someone else may run this job now.
-    const renew = setInterval(() => {
-      this.execution
-        .renewLease(jobId, attempt, this.opts.workerId, this.opts.leaseMs)
-        .then((ok) => {
-          if (!ok) {
-            log.warn('lease lost while running; aborting handler');
-            controller.abort(new ExecutionAborted('lease_lost'));
-          }
-        })
-        .catch((err: unknown) => {
-          log.warn({ err }, 'lease renewal failed; will retry');
-        });
-    }, Math.max(50, Math.floor(this.opts.leaseMs / 3)));
+    const renew = setInterval(
+      () => {
+        this.execution
+          .renewLease(jobId, attempt, this.opts.workerId, this.opts.leaseMs)
+          .then((ok) => {
+            if (!ok) {
+              log.warn('lease lost while running; aborting handler');
+              controller.abort(new ExecutionAborted('lease_lost'));
+            }
+          })
+          .catch((err: unknown) => {
+            log.warn({ err }, 'lease renewal failed; will retry');
+          });
+      },
+      Math.max(50, Math.floor(this.opts.leaseMs / 3)),
+    );
 
     const started = performance.now();
     let outcome: ExecutionOutcome;
@@ -96,7 +100,8 @@ export class JobExecutor {
       let failed = false;
       try {
         const handler = this.handlers.get(job.type);
-        if (!handler) throw new PermanentJobError('unknown_job_type', `No handler registered for '${job.type}'`);
+        if (!handler)
+          throw new PermanentJobError('unknown_job_type', `No handler registered for '${job.type}'`);
         const aborted = new Promise<never>((_, reject) => {
           controller.signal.addEventListener(
             'abort',
@@ -108,7 +113,13 @@ export class JobExecutor {
         });
         // Promise.race: a handler that ignores the abort signal cannot hold the attempt past its timeout.
         result = await Promise.race([
-          handler.execute(job.payload, { jobId, projectId: job.project_id, attempt, signal: controller.signal, logger: log }),
+          handler.execute(job.payload, {
+            jobId,
+            projectId: job.project_id,
+            attempt,
+            signal: controller.signal,
+            logger: log,
+          }),
           aborted,
         ]);
       } catch (err) {
@@ -135,7 +146,11 @@ export class JobExecutor {
         } else {
           const classified =
             reason === 'shutdown'
-              ? { code: 'worker_shutdown', message: 'Worker shut down before the job finished', retryable: true }
+              ? {
+                  code: 'worker_shutdown',
+                  message: 'Worker shut down before the job finished',
+                  retryable: true,
+                }
               : classifyError(handlerError, reason === 'timeout');
           const res = await this.execution.fail(
             jobId,
@@ -147,7 +162,10 @@ export class JobExecutor {
           );
           outcome = res.applied ? res.outcome : 'stale';
           if (res.applied) {
-            log.info({ code: classified.code, outcome, retryable: classified.retryable }, 'job attempt failed');
+            log.info(
+              { code: classified.code, outcome, retryable: classified.retryable },
+              'job attempt failed',
+            );
           }
         }
       }

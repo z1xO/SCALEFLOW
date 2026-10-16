@@ -11,13 +11,26 @@ import { useMe } from '@/lib/auth';
 import { relativeTime } from '@/lib/format';
 import type { ApiKey, Role } from '@/lib/types';
 
-function SecretDialog({ secret, onClose, projectId }: { secret: string | null; onClose: () => void; projectId: string }) {
+function SecretDialog({
+  secret,
+  onClose,
+  projectId,
+}: {
+  secret: string | null;
+  onClose: () => void;
+  projectId: string;
+}) {
   const [copied, setCopied] = useState(false);
   return (
     <Dialog open={secret !== null} onClose={onClose} title="Your new API key">
       <div className="flex flex-col gap-3">
-        <Notice tone="info">This is the only time the key is shown. Only a hash is stored on the server.</Notice>
-        <code data-testid="api-key-secret" className="break-all rounded-md border border-line bg-surface-2 p-3 font-mono text-sm">
+        <Notice tone="info">
+          This is the only time the key is shown. Only a hash is stored on the server.
+        </Notice>
+        <code
+          data-testid="api-key-secret"
+          className="break-all rounded-md border border-line bg-surface-2 p-3 font-mono text-sm"
+        >
           {secret}
         </code>
         <div className="flex gap-2">
@@ -49,7 +62,11 @@ export default function SettingsPage() {
   const me = useMe();
   const role = me.data?.memberships.find((m) => m.projectId === projectId)?.role;
   const isOwner = role === 'owner';
-  const keys = useQuery({ queryKey: ['api-keys', projectId], queryFn: () => api.apiKeys(projectId), enabled: isOwner });
+  const keys = useQuery({
+    queryKey: ['api-keys', projectId],
+    queryFn: () => api.apiKeys(projectId),
+    enabled: isOwner,
+  });
   const members = useQuery({ queryKey: ['members', projectId], queryFn: () => api.members(projectId) });
 
   const [secret, setSecret] = useState<string | null>(null);
@@ -63,7 +80,12 @@ export default function SettingsPage() {
   const onErr = (e: Error) => setError(e instanceof ApiError ? `${e.message} (${e.code})` : e.message);
 
   const createKey = useMutation({
-    mutationFn: () => api.createApiKey(projectId, keyName.trim(), scope === 'rw' ? ['jobs:read', 'jobs:write'] : ['jobs:read']),
+    mutationFn: () =>
+      api.createApiKey(
+        projectId,
+        keyName.trim(),
+        scope === 'rw' ? ['jobs:read', 'jobs:write'] : ['jobs:read'],
+      ),
     onSuccess: async (r) => {
       setKeyName('');
       setSecret(r.secret);
@@ -79,7 +101,11 @@ export default function SettingsPage() {
     },
     onError: onErr,
   });
-  const revoke = useMutation({ mutationFn: (k: ApiKey) => api.revokeApiKey(projectId, k.id), onSuccess: refreshKeys, onError: onErr });
+  const revoke = useMutation({
+    mutationFn: (k: ApiKey) => api.revokeApiKey(projectId, k.id),
+    onSuccess: refreshKeys,
+    onError: onErr,
+  });
   const addMember = useMutation({
     mutationFn: () => api.addMember(projectId, memberEmail.trim(), memberRole),
     onSuccess: async () => {
@@ -117,7 +143,17 @@ export default function SettingsPage() {
                 }}
               >
                 <div className="flex-1">
-                  <Field label="Key name">{(id) => <Input id={id} value={keyName} onChange={(e) => setKeyName(e.target.value)} placeholder="e.g. backend-prod" required />}</Field>
+                  <Field label="Key name">
+                    {(id) => (
+                      <Input
+                        id={id}
+                        value={keyName}
+                        onChange={(e) => setKeyName(e.target.value)}
+                        placeholder="e.g. backend-prod"
+                        required
+                      />
+                    )}
+                  </Field>
                 </div>
                 <Field label="Scopes">
                   {(id) => (
@@ -140,27 +176,40 @@ export default function SettingsPage() {
               ) : (
                 <ul className="divide-y divide-line">
                   {keys.data.items.map((k) => {
-                    const expired = k.expiresAt !== null && new Date(k.expiresAt).getTime() < keys.dataUpdatedAt;
+                    const expired =
+                      k.expiresAt !== null && new Date(k.expiresAt).getTime() < keys.dataUpdatedAt;
                     const inactive = k.revokedAt !== null || expired;
                     return (
-                      <li key={k.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <li
+                        key={k.id}
+                        className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
                         <div>
                           <p className="font-medium">
-                            {k.name}{' '}
-                            <span className="font-mono text-xs text-muted">{k.prefix}…</span>
+                            {k.name} <span className="font-mono text-xs text-muted">{k.prefix}…</span>
                           </p>
                           <p className="text-xs text-muted">
-                            {k.scopes.join(', ')} · created {relativeTime(k.createdAt)} · last used {k.lastUsedAt ? relativeTime(k.lastUsedAt) : 'never'}
+                            {k.scopes.join(', ')} · created {relativeTime(k.createdAt)} · last used{' '}
+                            {k.lastUsedAt ? relativeTime(k.lastUsedAt) : 'never'}
                             {k.revokedAt && ` · revoked ${relativeTime(k.revokedAt)}`}
-                            {!k.revokedAt && k.expiresAt && ` · ${expired ? 'expired' : 'expires'} ${relativeTime(k.expiresAt)}`}
+                            {!k.revokedAt &&
+                              k.expiresAt &&
+                              ` · ${expired ? 'expired' : 'expires'} ${relativeTime(k.expiresAt)}`}
                           </p>
                         </div>
                         {!inactive && (
                           <div className="flex gap-2">
-                            <Button onClick={() => rotate.mutate(k)} busy={rotate.isPending && rotate.variables.id === k.id}>
+                            <Button
+                              onClick={() => rotate.mutate(k)}
+                              busy={rotate.isPending && rotate.variables.id === k.id}
+                            >
                               Rotate
                             </Button>
-                            <Button variant="danger" onClick={() => revoke.mutate(k)} aria-label={`Revoke key ${k.name}`}>
+                            <Button
+                              variant="danger"
+                              onClick={() => revoke.mutate(k)}
+                              aria-label={`Revoke key ${k.name}`}
+                            >
                               Revoke
                             </Button>
                           </div>
@@ -170,7 +219,9 @@ export default function SettingsPage() {
                   })}
                 </ul>
               )}
-              <p className="text-xs text-muted">Rotation issues a new key and keeps the old one valid for one hour.</p>
+              <p className="text-xs text-muted">
+                Rotation issues a new key and keeps the old one valid for one hour.
+              </p>
             </div>
           )}
         </Card>
@@ -189,7 +240,11 @@ export default function SettingsPage() {
                   <span className="flex items-center gap-3">
                     <span className="text-xs text-ink-2">{m.role}</span>
                     {isOwner && m.userId !== me.data?.user.id && (
-                      <Button variant="danger" onClick={() => removeMember.mutate(m.userId)} aria-label={`Remove ${m.email}`}>
+                      <Button
+                        variant="danger"
+                        onClick={() => removeMember.mutate(m.userId)}
+                        aria-label={`Remove ${m.email}`}
+                      >
                         Remove
                       </Button>
                     )}
@@ -209,7 +264,15 @@ export default function SettingsPage() {
             >
               <div className="flex-1">
                 <Field label="Add member by email" hint="The user must already have an account.">
-                  {(id) => <Input id={id} type="email" value={memberEmail} onChange={(e) => setMemberEmail(e.target.value)} required />}
+                  {(id) => (
+                    <Input
+                      id={id}
+                      type="email"
+                      value={memberEmail}
+                      onChange={(e) => setMemberEmail(e.target.value)}
+                      required
+                    />
+                  )}
                 </Field>
               </div>
               <Field label="Role">

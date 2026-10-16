@@ -12,21 +12,40 @@ import { Card, CodeBlock, Notice } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { dateTime, formatDuration, relativeTime } from '@/lib/format';
 
-const ATTEMPT_LABEL = { running: 'Running', succeeded: 'Succeeded', failed: 'Failed', timed_out: 'Timed out', lost: 'Lost (worker died)' };
+const ATTEMPT_LABEL = {
+  running: 'Running',
+  succeeded: 'Succeeded',
+  failed: 'Failed',
+  timed_out: 'Timed out',
+  lost: 'Lost (worker died)',
+};
 
 export default function JobDetailPage() {
   const { projectId, jobId } = useParams<{ projectId: string; jobId: string }>();
   const [actionError, setActionError] = useState<string | null>(null);
   // All three share the ['job', projectId, jobId] prefix, so a live event refreshes them together.
   const job = useQuery({ queryKey: ['job', projectId, jobId], queryFn: () => api.job(projectId, jobId) });
-  const attempts = useQuery({ queryKey: ['job', projectId, jobId, 'attempts'], queryFn: () => api.attempts(projectId, jobId) });
-  const events = useQuery({ queryKey: ['job', projectId, jobId, 'events'], queryFn: () => api.jobEvents(projectId, jobId) });
+  const attempts = useQuery({
+    queryKey: ['job', projectId, jobId, 'attempts'],
+    queryFn: () => api.attempts(projectId, jobId),
+  });
+  const events = useQuery({
+    queryKey: ['job', projectId, jobId, 'events'],
+    queryFn: () => api.jobEvents(projectId, jobId),
+  });
 
   if (job.isPending) return <LoadingRows rows={6} />;
   if (job.isError) {
     if (job.error instanceof ApiError && job.error.status === 404) {
       return (
-        <EmptyState title="Job not found" action={<Link className="text-sm text-accent hover:underline" href={`/projects/${projectId}/jobs`}>Back to jobs</Link>}>
+        <EmptyState
+          title="Job not found"
+          action={
+            <Link className="text-sm text-accent hover:underline" href={`/projects/${projectId}/jobs`}>
+              Back to jobs
+            </Link>
+          }
+        >
           It may belong to another project, or it was removed by the retention policy.
         </EmptyState>
       );
@@ -68,7 +87,9 @@ export default function JobDetailPage() {
             <dd>{formatDuration(j.timeoutMs)}</dd>
             <dt className="text-muted">Created</dt>
             <dd title={dateTime(j.createdAt)}>{relativeTime(j.createdAt)}</dd>
-            <dt className="text-muted">{j.status === 'scheduled' || j.status === 'retry_wait' ? 'Runs' : 'Run at'}</dt>
+            <dt className="text-muted">
+              {j.status === 'scheduled' || j.status === 'retry_wait' ? 'Runs' : 'Run at'}
+            </dt>
             <dd title={dateTime(j.runAt)}>{relativeTime(j.runAt)}</dd>
             {j.finishedAt && (
               <>
@@ -105,7 +126,9 @@ export default function JobDetailPage() {
             <Card title="Last error">
               <p className="font-mono text-sm text-critical-ink">{j.lastError.code}</p>
               <p className="mt-1 text-sm text-ink-2">{j.lastError.message}</p>
-              <p className="mt-1 text-xs text-muted">{j.lastError.retryable ? 'Retryable error' : 'Permanent error (not retried)'}</p>
+              <p className="mt-1 text-xs text-muted">
+                {j.lastError.retryable ? 'Retryable error' : 'Permanent error (not retried)'}
+              </p>
             </Card>
           )}
           <Card title="Payload">
@@ -162,8 +185,14 @@ export default function JobDetailPage() {
                 <li key={e.cursor} className="flex items-center gap-3">
                   <StatusBadge status={e.data.to} />
                   <span className="text-ink-2">{e.type.replace('job.', '').replace('_', ' ')}</span>
-                  {e.data.reason && <span className="text-xs text-muted">({e.data.reason.replace('_', ' ')})</span>}
-                  <time className="ml-auto text-xs text-muted" dateTime={e.createdAt} title={dateTime(e.createdAt)}>
+                  {e.data.reason && (
+                    <span className="text-xs text-muted">({e.data.reason.replace('_', ' ')})</span>
+                  )}
+                  <time
+                    className="ml-auto text-xs text-muted"
+                    dateTime={e.createdAt}
+                    title={dateTime(e.createdAt)}
+                  >
                     {relativeTime(e.createdAt)}
                   </time>
                 </li>

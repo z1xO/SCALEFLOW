@@ -33,7 +33,10 @@ const SUBMIT_APIS = (__ENV.API_URLS || API).split(',');
 
 export function submitJob(t, body, tags = {}) {
   const base = SUBMIT_APIS[(__VU + __ITER) % SUBMIT_APIS.length];
-  const res = http.post(`${base}/v1/projects/${t.projectId}/jobs`, JSON.stringify(body), { ...headers(t.key), tags: { name: 'POST /jobs', ...tags } });
+  const res = http.post(`${base}/v1/projects/${t.projectId}/jobs`, JSON.stringify(body), {
+    ...headers(t.key),
+    tags: { name: 'POST /jobs', ...tags },
+  });
   check(res, { 'submitted (201)': (r) => r.status === 201 });
   return res;
 }
@@ -52,7 +55,10 @@ export function submitBatch(t, jobs) {
 export function waitForFinished(t, n, timeoutSeconds = 600) {
   const deadline = Date.now() + timeoutSeconds * 1000;
   for (;;) {
-    const res = http.get(`${API}/v1/projects/${t.projectId}/metrics?window=15m`, { ...headers(t.key), tags: { name: 'GET /metrics (poll)' } });
+    const res = http.get(`${API}/v1/projects/${t.projectId}/metrics?window=15m`, {
+      ...headers(t.key),
+      tags: { name: 'GET /metrics (poll)' },
+    });
     if (res.status === 200) {
       const c = res.json('counts');
       const done = c.succeeded + c.failed + c.cancelled;

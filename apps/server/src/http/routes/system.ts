@@ -33,7 +33,13 @@ export const ProjectMetricsSchema = z
     }),
     latency: z.object({ execution: Latency, queueWait: Latency }),
     series: z.array(
-      z.object({ t: z.string(), submitted: z.number(), succeeded: z.number(), failed: z.number(), retried: z.number() }),
+      z.object({
+        t: z.string(),
+        submitted: z.number(),
+        succeeded: z.number(),
+        failed: z.number(),
+        retried: z.number(),
+      }),
     ),
   })
   .meta({ id: 'ProjectMetrics' });
@@ -42,10 +48,20 @@ export const SystemSnapshotSchema = z
   .object({
     takenAt: z.string(),
     queues: z.record(z.string(), z.record(z.string(), z.number())),
-    jobs: z.object({ scheduled: z.number(), queued: z.number(), running: z.number(), retry_wait: z.number() }),
+    jobs: z.object({
+      scheduled: z.number(),
+      queued: z.number(),
+      running: z.number(),
+      retry_wait: z.number(),
+    }),
     oldestQueuedAgeSeconds: z.number(),
     outbox: z.object({ pending: z.number(), oldestAgeSeconds: z.number() }),
-    workers: z.object({ online: z.number(), draining: z.number(), activeJobs: z.number(), capacity: z.number() }),
+    workers: z.object({
+      online: z.number(),
+      draining: z.number(),
+      activeJobs: z.number(),
+      capacity: z.number(),
+    }),
   })
   .meta({ id: 'SystemSnapshot' });
 
@@ -100,8 +116,10 @@ export const systemRoutes =
       },
       async (request) => {
         if (!request.principal) throw new UnauthorizedError();
-        return services.loader.get(`${services.config.REDIS_KEY_PREFIX}:system:queues`, { freshMs: 2_000, staleMs: 10_000 }, () =>
-          takeSnapshot(services.pool, services.queues),
+        return services.loader.get(
+          `${services.config.REDIS_KEY_PREFIX}:system:queues`,
+          { freshMs: 2_000, staleMs: 10_000 },
+          () => takeSnapshot(services.pool, services.queues),
         );
       },
     );

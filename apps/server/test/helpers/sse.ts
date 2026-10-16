@@ -15,7 +15,10 @@ export class SseClient {
 
   static async connect(url: string, headers: Record<string, string> = {}): Promise<SseClient> {
     const client = new SseClient();
-    const res = await fetch(url, { headers: { accept: 'text/event-stream', ...headers }, signal: client.abort.signal });
+    const res = await fetch(url, {
+      headers: { accept: 'text/event-stream', ...headers },
+      signal: client.abort.signal,
+    });
     client.status = res.status;
     if (res.ok && res.body) {
       client.reading = client.read(res.body);

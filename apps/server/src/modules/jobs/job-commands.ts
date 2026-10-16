@@ -33,7 +33,9 @@ export const CreateJobInputSchema = z
       .regex(/^[\x21-\x7e]+$/, 'printable ASCII without spaces')
       .optional(),
   })
-  .refine((v) => !(v.runAt && v.delayMs !== undefined), { message: 'Specify either runAt or delayMs, not both' });
+  .refine((v) => !(v.runAt && v.delayMs !== undefined), {
+    message: 'Specify either runAt or delayMs, not both',
+  });
 
 export type CreateJobInput = z.input<typeof CreateJobInputSchema>;
 type ParsedCreateJobInput = z.output<typeof CreateJobInputSchema>;
@@ -84,7 +86,9 @@ export class JobCommands {
   /** Validates and normalises a submission (no I/O). Exposed for the scheduler. */
   prepare(raw: ParsedCreateJobInput, now = new Date()): PreparedJob {
     if (!this.deps.queues.includes(raw.queue)) {
-      throw new UnprocessableError('unknown_queue', `Unknown queue '${raw.queue}'`, { queues: this.deps.queues });
+      throw new UnprocessableError('unknown_queue', `Unknown queue '${raw.queue}'`, {
+        queues: this.deps.queues,
+      });
     }
     const size = Buffer.byteLength(JSON.stringify(raw.payload));
     if (size > this.deps.maxPayloadBytes) {
@@ -143,7 +147,11 @@ export class JobCommands {
     return { results, commitLsn };
   }
 
-  async cancel(projectId: string, jobId: string, ctx: CommandContext): Promise<{ job: JobDto; commitLsn: string | null }> {
+  async cancel(
+    projectId: string,
+    jobId: string,
+    ctx: CommandContext,
+  ): Promise<{ job: JobDto; commitLsn: string | null }> {
     const row = await withTransaction(this.deps.pool, async (client) => {
       const { rows } = await client.query<JobRow & { previous_status: JobStatus }>(
         `WITH prev AS (SELECT id, status FROM jobs WHERE id = $1 AND project_id = $2 FOR UPDATE)
@@ -187,7 +195,11 @@ export class JobCommands {
    * Manual retry (replay) of a dead-lettered job. Eligible: status 'failed'. Gives the job a fresh
    * per-run attempt budget; the global attempt counter keeps increasing.
    */
-  async retry(projectId: string, jobId: string, ctx: CommandContext): Promise<{ job: JobDto; commitLsn: string | null }> {
+  async retry(
+    projectId: string,
+    jobId: string,
+    ctx: CommandContext,
+  ): Promise<{ job: JobDto; commitLsn: string | null }> {
     const row = await withTransaction(this.deps.pool, async (client) => {
       const { rows } = await client.query<JobRow>(
         `UPDATE jobs SET status = 'queued', run_attempts = 0, run_at = now(), queued_at = now(),
@@ -199,15 +211,25 @@ export class JobCommands {
       const updated = rows[0];
       if (!updated) {
         const current = await currentStatus(client, projectId, jobId);
-        throw new ConflictError('job_not_retryable', `Only failed jobs can be retried (status is '${current}')`, {
-          status: current,
-        });
+        throw new ConflictError(
+          'job_not_retryable',
+          `Only failed jobs can be retried (status is '${current}')`,
+          {
+            status: current,
+          },
+        );
       }
       const event: NewJobEvent = {
         projectId,
         jobId,
         type: 'job.queued',
-        data: { from: 'failed', to: 'queued', type: updated.type, queue: updated.queue, reason: 'manual_retry' },
+        data: {
+          from: 'failed',
+          to: 'queued',
+          type: updated.type,
+          queue: updated.queue,
+          reason: 'manual_retry',
+        },
       };
       await appendEvents(client, [event]);
       await enqueueDispatches(client, [updated]);

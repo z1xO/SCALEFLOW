@@ -30,7 +30,12 @@ const common = { signal: lifecycle.signal, logger, metrics };
 
 const loops = [
   runLoop({ ...common, name: 'outbox', intervalMs: config.RELAY_POLL_MS, tick: () => relay.tick() }),
-  runLoop({ ...common, name: 'projector', intervalMs: config.PROJECTOR_POLL_MS, tick: () => projector.tick() }),
+  runLoop({
+    ...common,
+    name: 'projector',
+    intervalMs: config.PROJECTOR_POLL_MS,
+    tick: () => projector.tick(),
+  }),
   runLoop({
     ...common,
     name: 'outbox_backlog',

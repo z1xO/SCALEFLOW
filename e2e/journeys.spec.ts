@@ -36,7 +36,12 @@ async function createApiKey(page: Page, projectId: string): Promise<string> {
   return secret;
 }
 
-async function submitViaApi(request: APIRequestContext, key: string, projectId: string, body: object): Promise<string> {
+async function submitViaApi(
+  request: APIRequestContext,
+  key: string,
+  projectId: string,
+  body: object,
+): Promise<string> {
   const res = await request.post(`${API}/v1/projects/${projectId}/jobs`, {
     headers: { authorization: `Bearer ${key}` },
     data: body,
@@ -81,7 +86,10 @@ test('client-side and server-side validation errors are shown on the form', asyn
   await expect(page.getByRole('listitem').filter({ hasText: /^durationMs: Too small/ })).toBeVisible();
 });
 
-test('a dead-lettered job shows its error and can be retried from the dashboard', async ({ page, request }) => {
+test('a dead-lettered job shows its error and can be retried from the dashboard', async ({
+  page,
+  request,
+}) => {
   await registerAndLogin(page);
   const projectId = await createProject(page, 'E2E failures');
   const key = await createApiKey(page, projectId);
@@ -107,7 +115,11 @@ test('a delayed job can be cancelled before it runs', async ({ page, request }) 
   await registerAndLogin(page);
   const projectId = await createProject(page, 'E2E cancel');
   const key = await createApiKey(page, projectId);
-  const jobId = await submitViaApi(request, key, projectId, { type: 'demo.echo', payload: {}, delayMs: 600_000 });
+  const jobId = await submitViaApi(request, key, projectId, {
+    type: 'demo.echo',
+    payload: {},
+    delayMs: 600_000,
+  });
   await page.goto(`/projects/${projectId}/jobs/${jobId}`);
   await expect(page.getByTestId('job-status')).toContainText('Scheduled');
   await page.getByRole('button', { name: `Cancel job ${jobId}` }).click();

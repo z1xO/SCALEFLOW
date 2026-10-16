@@ -14,7 +14,15 @@ export function LoadingRows({ rows = 5 }: { rows?: number }) {
   );
 }
 
-export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
+export function EmptyState({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children?: ReactNode;
+  action?: ReactNode;
+}) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-line px-6 py-10 text-center">
       <p className="text-sm font-medium text-ink">{title}</p>
@@ -28,7 +36,10 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
   const message = error instanceof Error ? error.message : 'Something went wrong';
   const requestId = error instanceof ApiError ? error.requestId : null;
   return (
-    <div role="alert" className="flex flex-col items-start gap-2 rounded-lg border border-critical/40 bg-critical/10 px-4 py-3">
+    <div
+      role="alert"
+      className="flex flex-col items-start gap-2 rounded-lg border border-critical/40 bg-critical/10 px-4 py-3"
+    >
       <p className="text-sm font-medium text-critical-ink">Could not load this data</p>
       <p className="text-sm text-ink-2">{message}</p>
       {requestId && <p className="font-mono text-xs text-muted">request id: {requestId}</p>}

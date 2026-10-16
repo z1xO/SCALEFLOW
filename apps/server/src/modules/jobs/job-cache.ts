@@ -34,7 +34,11 @@ export class JobCache {
   }
 
   fill(job: JobDto): Promise<boolean> {
-    return this.cache.fill(this.key(job.projectId, job.id), job, isTerminal(job.status) ? TERMINAL_TTL_MS : ACTIVE_TTL_MS);
+    return this.cache.fill(
+      this.key(job.projectId, job.id),
+      job,
+      isTerminal(job.status) ? TERMINAL_TTL_MS : ACTIVE_TTL_MS,
+    );
   }
 
   /** Call after the transaction that produced `rows` has committed. */
