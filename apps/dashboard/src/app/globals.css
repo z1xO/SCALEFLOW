@@ -1,0 +1,86 @@
+@import 'tailwindcss';
+
+/* Design tokens. Chart colors follow the validated categorical order (see docs/dashboard.md). */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f3f2ee;
+  --border: rgba(11, 11, 11, 0.1);
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --ink-muted: #6b6a66;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --accent: #2a78d6;
+  --accent-ink: #ffffff;
+  --focus: #2a78d6;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --critical-ink: #b42323;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #232321;
+    --border: rgba(255, 255, 255, 0.1);
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --ink-muted: #9a988f;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --accent: #3987e5;
+    --focus: #6da7ec;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --good-ink: #0ca30c;
+    --critical-ink: #e66767;
+  }
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-good: var(--good);
+  --color-good-ink: var(--good-ink);
+  --color-warning: var(--warning);
+  --color-serious: var(--serious);
+  --color-critical: var(--critical);
+  --color-critical-ink: var(--critical-ink);
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
+}
+
+html,
+body {
+  background: var(--page);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

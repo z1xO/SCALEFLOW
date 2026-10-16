@@ -52,13 +52,11 @@ export class QueueSet {
   }
 
   async counts(): Promise<Record<string, Record<string, number>>> {
-    const out: Record<string, Record<string, number>> = {};
-    await Promise.all(
-      this.names.map(async (n) => {
-        out[n] = await this.get(n).getJobCounts('waiting', 'active', 'delayed', 'prioritized', 'completed', 'failed');
-      }),
+    const counts = await Promise.all(
+      this.names.map((n) => this.get(n).getJobCounts('waiting', 'active', 'delayed', 'prioritized', 'completed', 'failed')),
     );
-    return out;
+    // Built in configured order so consumers render queues in a stable order.
+    return Object.fromEntries(this.names.map((n, i) => [n, counts[i] ?? {}]));
   }
 
   async close(): Promise<void> {
