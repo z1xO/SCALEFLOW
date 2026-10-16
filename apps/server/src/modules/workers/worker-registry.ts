@@ -50,8 +50,8 @@ const toDto = (r: WorkerRow): WorkerDto => ({
   stoppedAt: r.stopped_at?.toISOString() ?? null,
 });
 
-export function newWorkerId(): string {
-  return `${hostname()}-${process.pid}-${randomToken(4).replace(/[^A-Za-z0-9]/g, 'x')}`;
+export function newWorkerId(name: string = hostname()): string {
+  return `${name}-${process.pid}-${randomToken(4).replace(/[^A-Za-z0-9]/g, 'x')}`;
 }
 
 /** Durable record of worker processes: registration, heartbeats, liveness. */

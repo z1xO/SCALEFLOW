@@ -10,6 +10,7 @@ const config: NextConfig = {
   poweredByHeader: false,
   // Do not generate AGENTS.md / CLAUDE.md into the repository on `next dev`.
   agentRules: false,
+  devIndicators: false,
   async headers() {
     return [
       {

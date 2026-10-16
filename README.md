@@ -1,5 +1,8 @@
 # ScaleFlow
 
+[![CI](https://github.com/z1XO/scaleflow/actions/workflows/ci.yml/badge.svg)](https://github.com/z1XO/scaleflow/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 An open-source, educational **distributed job processing and event delivery platform**: submit jobs
 over a REST API, run them on horizontally scaled workers with retries, backoff, dead-lettering and
 schedules, and watch them live in a dashboard. Built to demonstrate durable publication
@@ -8,6 +11,14 @@ commit-ordered real-time events, and honest operational limits.
 
 Stack: TypeScript, Node.js 24, Fastify 5, PostgreSQL 17, Redis 8 + BullMQ, Zod, OpenAPI, Server-Sent
 Events, Next.js 16 + TanStack Query + Tailwind + Recharts, Prometheus/Grafana, Vitest, Playwright, k6.
+
+![Overview: success rate, latency percentiles, throughput and the live event feed](docs/images/overview.png)
+
+| A job that failed twice and succeeded on its third attempt           | Workers and queue depth                        |
+| -------------------------------------------------------------------- | ---------------------------------------------- |
+| ![Job detail with attempts and timeline](docs/images/job-detail.png) | ![Workers and queues](docs/images/workers.png) |
+
+Screenshots are generated from the running stack with `npx tsx scripts/screenshots.mts`.
 
 ## Architecture
 

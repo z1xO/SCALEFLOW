@@ -14,7 +14,7 @@ lifecycle.installSignalHandlers();
 lifecycle.onShutdown('services', () => services.close());
 
 const runtime = new WorkerRuntime(services, {
-  workerId: newWorkerId(),
+  workerId: newWorkerId(config.WORKER_NAME),
   queues: config.WORKER_QUEUES,
   concurrency: config.WORKER_CONCURRENCY,
   leaseMs: config.WORKER_LEASE_MS,

@@ -63,6 +63,11 @@ const EnvSchema = z.object({
 
   QUEUES: csv.default(['default', 'critical', 'bulk']),
   WORKER_QUEUES: csv.default(['default', 'critical', 'bulk']),
+  /** Prefix for worker ids (default: the hostname). Set to the pod/container name in orchestrators. */
+  WORKER_NAME: z
+    .string()
+    .regex(/^[A-Za-z0-9._-]{1,64}$/)
+    .optional(),
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(1000).default(10),
   WORKER_LEASE_MS: z.coerce.number().int().min(1000).default(30_000),
   WORKER_SHUTDOWN_GRACE_MS: z.coerce.number().int().min(0).default(25_000),
