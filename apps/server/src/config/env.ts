@@ -27,7 +27,13 @@ const EnvSchema = z.object({
   REDIS_KEY_PREFIX: z.string().default('sf'),
   REDIS_COMMAND_TIMEOUT_MS: z.coerce.number().int().min(50).default(2_000),
 
+  /**
+   * Interface to listen on. 0.0.0.0 is right inside containers (the container network is the
+   * boundary); on a laptop use 127.0.0.1 so nothing on the local network can reach the API.
+   */
   API_HOST: z.string().default('0.0.0.0'),
+  /** Same, for the /metrics + health server of worker, relay and scheduler. */
+  OPS_HOST: z.string().default('0.0.0.0'),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   API_BODY_LIMIT_BYTES: z.coerce.number().int().min(1024).default(1_048_576),
   /** Origins allowed for CORS and for cookie-authenticated state-changing requests (CSRF check). */

@@ -58,8 +58,8 @@ export function startOpsServer(
   });
   return new Promise((resolve, reject) => {
     server.once('error', reject);
-    server.listen(port, '0.0.0.0', () => {
-      logger.info({ port }, 'ops server listening');
+    server.listen(port, config.OPS_HOST, () => {
+      logger.info({ host: config.OPS_HOST, port }, 'ops server listening');
       resolve(server);
     });
   });

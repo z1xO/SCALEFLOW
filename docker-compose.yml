@@ -4,7 +4,8 @@
 #   docker compose up -d --scale worker=4        # more workers
 #   docker compose run --rm migrate node dist/cli/seed.js   # demo data
 #
-# Credentials below are local-only placeholders. Single instances of PostgreSQL and Redis are
+# Credentials below are local-only placeholders, and every port is published on 127.0.0.1 only
+# so nothing on your network can reach it. Single instances of PostgreSQL and Redis are
 # single points of failure; see docs/deployment.md for what production needs instead.
 
 x-server: &server
@@ -21,9 +22,9 @@ x-server: &server
     REDIS_URL: redis://redis:6379/0
     CORS_ORIGINS: http://localhost:3000
     PUBLIC_API_URL: http://localhost:4000
-    # Local only: plain-HTTP cookies and webhooks to private addresses (the demo receiver).
+    # Local only: plain-HTTP cookies. Webhooks to private addresses stay blocked (SSRF protection).
     COOKIE_SECURE: 'false'
-    WEBHOOK_ALLOW_PRIVATE_NETWORKS: 'true'
+    WEBHOOK_ALLOW_PRIVATE_NETWORKS: 'false'
     WEBHOOK_SIGNING_SECRET: ${WEBHOOK_SIGNING_SECRET:-local-compose-signing-secret}
   depends_on:
     postgres:
@@ -41,7 +42,7 @@ services:
       POSTGRES_PASSWORD: scaleflow
       POSTGRES_DB: scaleflow
     command: ['postgres', '-c', 'max_connections=300', '-c', 'shared_buffers=512MB']
-    ports: ['5432:5432']
+    ports: ['127.0.0.1:5432:5432']
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U scaleflow -d scaleflow']
@@ -54,7 +55,7 @@ services:
     # AOF persistence + noeviction: BullMQ requires that queue keys are never evicted.
     command:
       ['redis-server', '--appendonly', 'yes', '--appendfsync', 'everysec', '--maxmemory-policy', 'noeviction']
-    ports: ['6379:6379']
+    ports: ['127.0.0.1:6379:6379']
     volumes: [redisdata:/data]
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
@@ -73,7 +74,7 @@ services:
   api:
     <<: *server
     command: ['node', 'dist/processes/api.js']
-    ports: ['4000:4000']
+    ports: ['127.0.0.1:4000:4000']
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:4000/readyz >/dev/null || exit 1']
       interval: 10s
@@ -124,7 +125,7 @@ services:
     image: scaleflow-dashboard:local
     init: true
     restart: unless-stopped
-    ports: ['3000:3000']
+    ports: ['127.0.0.1:3000:3000']
     depends_on:
       api:
         condition: service_healthy
@@ -137,7 +138,7 @@ services:
     volumes:
       - ./infra/prometheus:/etc/prometheus:ro
       - promdata:/prometheus
-    ports: ['9090:9090']
+    ports: ['127.0.0.1:9090:9090']
     depends_on: [api]
 
   grafana:
@@ -150,7 +151,7 @@ services:
     volumes:
       - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    ports: ['3001:3000']
+    ports: ['127.0.0.1:3001:3000']
     depends_on: [prometheus]
 
 volumes:
