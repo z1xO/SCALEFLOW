@@ -3,7 +3,7 @@
 #   docker build -f apps/dashboard/Dockerfile --build-arg NEXT_PUBLIC_API_URL=http://localhost:4000 -t scaleflow-dashboard .
 # NEXT_PUBLIC_* values are compiled into the browser bundle, so the API URL is a build argument.
 
-FROM node:24.21.0-alpine AS build
+FROM node:24.22.2-alpine AS build
 WORKDIR /app
 ARG NEXT_PUBLIC_API_URL=http://localhost:4000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_TELEMETRY_DISABLED=1
@@ -14,7 +14,7 @@ RUN npm ci --workspace @scaleflow/dashboard --include-workspace-root --no-audit 
 COPY apps/dashboard apps/dashboard
 RUN npm run build --workspace @scaleflow/dashboard
 
-FROM node:24.21.0-alpine AS runtime
+FROM node:24.22.2-alpine AS runtime
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 WORKDIR /app
 COPY --from=build /app/apps/dashboard/.next/standalone ./
